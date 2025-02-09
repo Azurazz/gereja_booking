@@ -11,20 +11,7 @@
     <script src="/js/scripts.js" defer></script>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <h1>Booking App</h1>
-            <nav>
-                <ul>
-                    <li><a href="/">Home</a></li>
-                    <li><a href="/booking">Booking</a></li>
-                    <li><a href="/booking_gedung_1">Booking Gedung 1</a></li>
-                    <li><a href="/admin">Admin</a></li>
-                </ul>
-            </nav>
-            <a href="/admin/logout" class="btn logout-btn">Logout</a>
-        </div>
-    </header>
+    <%- include('partials/header') %>
 
     <main class="dashboard-container">
         <h2>Admin Dashboard</h2>
@@ -122,11 +109,7 @@
         </div>
     </div>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2023 Booking App. All rights reserved.</p>
-        </div>
-    </footer>
+    <%- include('partials/footer') %>
 
     <script>
         const seatData = {
