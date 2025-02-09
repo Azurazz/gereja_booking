@@ -1,0 +1,102 @@
+<!DOCTYPEhtml>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking - Booking App</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Booking App</h1>
+            <nav>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/booking">Booking</a></li>
+                    <li><a href="/booking_gedung_1">Booking Gedung 1</a></li>
+                    <li><a href="/admin">Admin</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <title class="text-center">Book Your Seat</title>
+        <form action="/booking/book" method="POST">
+            <div class="form-group">
+                <label for="nama">Nama:</label>
+                <input type="text" id="nama" name="nama" required>
+            </div>
+            <div class="form-group">
+                <label for="distrik">Distrik:</label>
+                <input type="text" id="distrik" name="distrik" required>
+            </div>            
+            <div class="form-group">
+                <label for="asal_sidang">Asal Sidang:</label>
+                <input type="text" id="asal_sidang" name="asal_sidang" required>
+            </div>            
+            <div class="form-group">
+                <label for="no_wa">No WA:</label>
+                <input type="text" id="no_wa" name="no_wa" required>
+            </div>
+            <div class="form-group">
+                <label for="blok_booking">Pilih Blok:</label>
+                <div class="image-container">
+                    <img src="/images/greja_layuot-1.png" alt="Greja Layout" class="layout-image">
+                </div>
+                <div class="seat-selection">
+                    <% const blocks = ['A', 'B', 'C', 'D', 'E', 'F']; %>
+                    <% blocks.forEach(blok => { %>
+                        <div class="seat-block" data-blok="<%= blok %>" data-max-seats="<%= seatData[blok].max %>">
+                            <div class="seat-label">Blok <%= blok %></div>
+                            <div class="seat-count"><%= seatData[blok].booked %>/<%= seatData[blok].max %></div>
+                        </div>
+                    <% }) %>
+                </div>
+                <input type="hidden" id="blok_booking" name="blok_booking" required>
+            </div>
+            <div class="form-group">
+                <label for="jumlah_seat">Jumlah Seat:</label>
+                <input type="number" id="jumlah_seat" name="jumlah_seat" min="1" required>
+            </div>
+            <button type="submit" class="btn">Book Now</button>
+        </form>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2023 Booking App. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const seatBlocks = document.querySelectorAll('.seat-block');
+            const blokBookingInput = document.getElementById('blok_booking');
+
+            // Tambahkan event listener untuk setiap blok
+            seatBlocks.forEach(block => {
+                block.addEventListener('click', () => {
+                    // Hapus class 'selected' dari semua blok
+                    seatBlocks.forEach(b => b.classList.remove('selected'));
+
+                    // Tambahkan class 'selected' ke blok yang diklik
+                    block.classList.add('selected');
+
+                    // Ambil nilai blok yang dipilih
+                    const selectedBlok = block.getAttribute('data-blok');
+
+                    // Isi nilai blok yang dipilih ke input tersembunyi
+                    blokBookingInput.value = selectedBlok;
+
+                    // Debugging: Cetak blok yang dipilih
+                    console.log('Blok yang dipilih:', selectedBlok);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

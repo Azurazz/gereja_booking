@@ -1,0 +1,560 @@
+/* General Styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f9;
+    color: #333;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    flex: 1;
+    box-sizing: border-box; /* Pastikan padding tidak mempengaruhi lebar total */
+}
+
+/* Header Styles */
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 20px 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%; /* Pastikan header mengambil lebar penuh */
+    position: sticky; /* Header tetap di atas saat di-scroll */
+    top: 0;
+    z-index: 1000; /* Pastikan header selalu di atas elemen lain */
+    box-sizing: border-box; /* Pastikan padding tidak mempengaruhi lebar total */
+}
+
+header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* Agar header responsif */
+}
+
+header h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 20px;
+}
+
+nav ul li a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+nav ul li a:hover {
+    color: #007bff;
+    transform: translateY(-2px);
+}
+
+/* Footer Styles */
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 20px 0; /* Padding lebih kecil */
+    margin-top: auto; /* Footer tetap di bawah */
+    box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%; /* Pastikan footer mengambil lebar penuh */
+    box-sizing: border-box; /* Pastikan padding tidak mempengaruhi lebar total */
+}
+
+footer p {
+    margin: 0;
+    font-size: 16px;
+}
+
+/* Hero Section */
+.hero {
+    text-align: center;
+    padding: 60px 20px; /* Padding lebih kecil */
+    background: linear-gradient(135deg, #007bff, #00bfff);
+    color: #fff;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    animation: fadeIn 1.5s ease-in-out;
+}
+
+.hero h2 {
+    font-size: 36px; /* Ukuran font lebih kecil */
+    margin-bottom: 15px;
+    animation: slideIn 1s ease-in-out;
+}
+
+.hero p {
+    font-size: 18px; /* Ukuran font lebih kecil */
+    margin-bottom: 25px;
+    animation: slideIn 1.2s ease-in-out;
+}
+
+.hero .btn {
+    animation: fadeIn 2s ease-in-out;
+}
+
+/* Button Styles */
+.btn {
+    background-color: #28a745;
+    color: #fff;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    font-size: 16px;
+}
+
+.btn:hover {
+    background-color: #218838;
+    transform: scale(1.05);
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+/* Form Styles */
+form {
+    background-color: #fff;
+    padding: 20px; /* Padding lebih kecil */
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 1s ease-in-out;
+    max-width: 800px; /* Lebar maksimum form */
+    margin: 0 auto; /* Pusatkan form */
+    width: 100%; /* Form akan menyesuaikan lebar container */
+    box-sizing: border-box; /* Pastikan padding tidak mempengaruhi lebar total */
+}
+
+.form-group {
+    margin-bottom: 20px; /* Margin lebih kecil */
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px; /* Margin lebih kecil */
+    font-weight: bold;
+    font-size: 16px;
+    color: #555;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    height: 50px; /* Tinggi input */
+    line-height: 50px; /* Sesuaikan dengan tinggi input */
+    padding: 0 15px; /* Padding horizontal */
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box; /* Pastikan padding tidak mempengaruhi lebar total */
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+/* Seat Selection */
+.seat-selection {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+/* Styling untuk blok seat */
+.seat-block {
+    padding: 10px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.seat-block:hover {
+    background-color: #f1f1f1;
+    transform: scale(1.05);
+}
+
+/* Styling untuk blok yang dipilih */
+.seat-block.selected {
+    border-color: #007bff;
+    background-color: #e3f2fd;
+}
+
+.seat-label {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.seat-count {
+    font-size: 14px;
+    color: #666;
+}
+
+/* Table Styles */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 25px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+table th,
+table td {
+    padding: 12px; /* Padding lebih kecil */
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+table tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Image Container */
+.image-container {
+    text-align: center;
+    margin: 20px 0;
+    animation: fadeIn 1s ease-in-out;
+}
+
+.layout-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.layout-image:hover {
+    transform: scale(1.02);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Dashboard Container */
+.dashboard-container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box; /* Pastikan padding tidak mempengaruhi lebar total */
+}
+
+/* Chart Grid Layout */
+.chart-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 card per baris di desktop */
+    gap: 20px; /* Gap lebih kecil */
+    margin-bottom: 30px; /* Margin lebih kecil */
+}
+
+/* Chart Card */
+.chart-card {
+    background-color: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px; /* Padding lebih kecil */
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.chart-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+.chart-card h3 {
+    margin-bottom: 15px; /* Margin lebih kecil */
+    font-size: 18px; /* Ukuran font lebih kecil */
+    color: #333;
+}
+
+/* Chart Container */
+.chart-container {
+    width: 100%;
+    max-width: 200px; /* Lebar maksimum lebih kecil */
+    margin: 0 auto;
+}
+
+/* Chart Info */
+.chart-info {
+    margin-top: 15px; /* Margin lebih kecil */
+}
+
+.chart-info p {
+    margin: 5px 0; /* Margin lebih kecil */
+    font-size: 14px; /* Ukuran font lebih kecil */
+    color: #555;
+}
+
+/* Logout Button in Header */
+.logout-btn {
+    background-color: #dc3545;
+    color: #fff;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.logout-btn:hover {
+    background-color: #c82333;
+    transform: scale(1.05);
+}
+
+/* Responsive Styles */
+@media (max-width: 1024px) {
+    /* Tablet Styles */
+    .chart-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 card per baris di tablet */
+    }
+
+    .chart-card h3 {
+        font-size: 16px; /* Ukuran font lebih kecil di tablet */
+    }
+
+    .chart-card {
+        padding: 15px; /* Padding lebih kecil di tablet */
+    }
+
+    .hero h2 {
+        font-size: 32px; /* Ukuran font lebih kecil di tablet */
+    }
+
+    .hero p {
+        font-size: 16px; /* Ukuran font lebih kecil di tablet */
+    }
+
+    .form-group input,
+    .form-group select {
+        height: 45px; /* Tinggi input lebih kecil di tablet */
+        line-height: 45px; /* Sesuaikan dengan tinggi input */
+    }
+}
+
+@media (max-width: 768px) {
+    /* Mobile Styles */
+    .chart-grid {
+        grid-template-columns: 1fr; /* 1 card per baris di mobile */
+    }
+
+    .chart-card h3 {
+        font-size: 16px; /* Ukuran font lebih kecil di mobile */
+    }
+
+    .chart-card {
+        padding: 15px; /* Padding lebih kecil di mobile */
+    }
+
+    header .container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    nav ul {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .logout-btn {
+        margin-top: 10px;
+    }
+
+    .hero {
+        padding: 40px 20px; /* Padding lebih kecil di mobile */
+    }
+
+    .hero h2 {
+        font-size: 28px; /* Ukuran font lebih kecil di mobile */
+    }
+
+    .hero p {
+        font-size: 16px; /* Ukuran font lebih kecil di mobile */
+    }
+
+    .btn {
+        padding: 10px 20px; /* Padding lebih kecil di mobile */
+        font-size: 14px; /* Ukuran font lebih kecil di mobile */
+    }
+
+    .form-group input,
+    .form-group select {
+        height: 40px; /* Tinggi input lebih kecil di mobile */
+        line-height: 40px; /* Sesuaikan dengan tinghi input */
+    }
+
+    .seat-selection {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Lebih kecil di mobile */
+    }
+}
+
+@media (max-width: 480px) {
+    /* Small Mobile Styles */
+    .hero {
+        padding: 30px 10px; /* Padding lebih kecil di mobile kecil */
+    }
+
+    .hero h2 {
+        font-size: 24px; /* Ukuran font lebih kecil di mobile kecil */
+    }
+
+    .hero p {
+        font-size: 14px; /* Ukuran font lebih kecil di mobile kecil */
+    }
+
+    .btn {
+        padding: 8px 16px; /* Padding lebih kecil di mobile kecil */
+        font-size: 12px; /* Ukuran font lebih kecil di mobile kecil */
+    }
+
+    .form-group input,
+    .form-group select {
+        height: 35px; /* Tinggi input lebih kecil di mobile kecil */
+        line-height: 35px; /* Sesuaikan dengan tinggi input */
+    }
+
+    .seat-selection {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Lebih kecil di mobile kecil */
+    }
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #333;
+}
+
+/* Additional Styles for Centering Text */
+.text-center {
+    text-align: center;
+}
+
+.form-group select {
+    width: 100%;
+    height: 50px;
+    padding: 0 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+    appearance: none; /* Menghilangkan tampilan default browser */
+    background-color: #fff;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+}
+
+.form-group select:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+/* Efek saat scroll */
+header.scrolled {
+    padding: 5px 0;
+    background-color: rgba(51, 51, 51, 0.9);
+}
+
+header.scrolled .burger div {
+    background-color: #fff;
+}

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Booking App</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/js/scripts.js" defer></script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Booking App</h1>
+            <nav>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/booking">Booking</a></li>
+                    <li><a href="/booking_gedung_1">Booking Gedung 1</a></li>
+                    <li><a href="/admin">Admin</a></li>
+                </ul>
+            </nav>
+            <a href="/admin/logout" class="btn logout-btn">Logout</a>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        <h2>Admin Dashboard</h2>
+
+        <!-- Chart Section -->
+        <div class="chart-grid">
+            <% const blocks = ['A', 'B', 'C', 'D', 'E', 'F']; %>
+            <% blocks.forEach(blok => { %>
+                <div class="chart-card">
+                    <h3>Blok <%= blok %></h3>
+                    <div class="chart-container">
+                        <canvas id="chart<%= blok %>"></canvas>
+                    </div>
+                    <div class="chart-info">
+                        <p>Terisi: <%= ((seatData[blok].booked / seatData[blok].max) * 100).toFixed(2) %>%</p>
+                        <p>Sisa: <%= seatData[blok].max - seatData[blok].booked %> seat</p>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+
+        <!-- Table Section -->
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nama</th>
+                        <th>Distrik</th>
+                        <th>Asal Sidang</th>
+                        <th>Blok Booking</th>
+                        <th>No WA</th>
+                        <th>Jumlah Seat</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (bookings && bookings.length > 0) { %>
+                        <% bookings.forEach(booking => { %>
+                            <tr data-id="<%= booking.id %>"> <!-- Pastikan atribut data-id ada -->
+                                <td><%= booking.nama %></td>
+                                <td><%= booking.distrik %></td>
+                                <td><%= booking.asal_sidang %></td>
+                                <td><%= booking.blok_booking %></td>
+                                <td><%= booking.no_wa %></td>
+                                <td><%= booking.jumlah_seat %></td>
+                                <td>
+                                    <button class="btn-edit" data-id="<%= booking.id %>">Edit</button>
+                                    <button class="btn-delete" data-id="<%= booking.id %>">Hapus</button>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="6" style="text-align: center;">Tidak ada data bookings.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Modal untuk Edit Data -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Booking</h2>
+            <form id="editForm">
+                <input type="hidden" id="editId" name="id">
+                <div class="form-group">
+                    <label for="editNama">Nama:</label>
+                    <input type="text" id="editNama" name="nama">
+                </div>
+                <div class="form-group">
+                    <label for="editDistrik">Distrik:</label>
+                    <input type="text" id="editDistrik" name="distrik">
+                </div>
+                <div class="form-group">
+                    <label for="editAsalSidang">Asal Sidang:</label>
+                    <input type="text" id="editAsalSidang" name="asal_sidang">
+                </div>
+                <div class="form-group">
+                    <label for="editBlokBooking">Blok Booking:</label>
+                    <input type="text" id="editBlokBooking" name="blok_booking">
+                </div>
+                <div class="form-group">
+                    <label for="editNoWa">No WA:</label>
+                    <input type="text" id="editNoWa" name="no_wa">
+                </div>
+                <div class="form-group">
+                    <label for="editJumlahSeat">Jumlah Seat:</label>
+                    <input type="number" id="editJumlahSeat" name="jumlah_seat" min="1">
+                </div>
+                <button type="submit" class="btn">Simpan Perubahan</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2023 Booking App. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        const seatData = {
+            A: { max: <%= seatData.A.max %>, booked: <%= seatData.A.booked %> },
+            B: { max: <%= seatData.B.max %>, booked: <%= seatData.B.booked %> },
+            C: { max: <%= seatData.C.max %>, booked: <%= seatData.C.booked %> },
+            D: { max: <%= seatData.D.max %>, booked: <%= seatData.D.booked %> },
+            E: { max: <%= seatData.E.max %>, booked: <%= seatData.E.booked %> },
+            F: { max: <%= seatData.F.max %>, booked: <%= seatData.F.booked %> }
+        };
+
+        Object.keys(seatData).forEach(blok => {
+            const ctx = document.getElementById(`chart${blok}`).getContext('2d');
+            const data = {
+                labels: ['Terisi', 'Sisa'],
+                datasets: [{
+                    data: [seatData[blok].booked, seatData[blok].max - seatData[blok].booked],
+                    backgroundColor: ['#36A2EB', '#FFCE56'],
+                    hoverOffset: 4
+                }]
+            };
+
+            new Chart(ctx, {
+                type: 'pie',
+                data: data,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += context.raw + ' seat';
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
