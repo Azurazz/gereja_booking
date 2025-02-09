@@ -4,14 +4,21 @@ const db = require('../models/db');
 
 // Halaman Booking
 router.get('/', (req, res) => {
-    // Ambil data booking dari database
-    const query = 'SELECT blok_booking, SUM(jumlah_seat) AS total_seat FROM bookings GROUP BY blok_booking';
-    db.query(query, (err, results) => {
-        if (err) {
-            console.error('Error fetching booking data:', err);
-            res.status(500).send('Internal Server Error');
-        } else {
-            // Format data untuk memudahkan penggunaan di EJS
+    const querySeat = 'SELECT blok_booking, SUM(jumlah_seat) AS total_seat FROM bookings GROUP BY blok_booking';
+    const queryDistrik = 'SELECT id, nama_distrik FROM distrik ORDER BY id ASC';
+
+    db.query(querySeat, (errSeat, resultsSeat) => {
+        if (errSeat) {
+            console.error('Error fetching booking data:', errSeat);
+            return res.status(500).send('Internal Server Error');
+        }
+
+        db.query(queryDistrik, (errDistrik, resultsDistrik) => {
+            if (errDistrik) {
+                console.error('Error fetching distrik data:', errDistrik);
+                return res.status(500).send('Internal Server Error');
+            }
+
             const seatData = {
                 A: { max: 100, booked: 0 },
                 B: { max: 140, booked: 0 },
@@ -21,18 +28,17 @@ router.get('/', (req, res) => {
                 F: { max: 100, booked: 0 }
             };
 
-            // Update jumlah seat yang sudah terbooking
-            results.forEach(row => {
+            resultsSeat.forEach(row => {
                 if (seatData[row.blok_booking]) {
                     seatData[row.blok_booking].booked = row.total_seat || 0;
                 }
             });
 
-            // Render halaman booking dengan data seat
-            res.render('booking', { seatData });
-        }
+            res.render('booking', { seatData, distrikList: resultsDistrik });
+        });
     });
 });
+
 
 // Proses Booking
 router.post('/book', (req, res) => {

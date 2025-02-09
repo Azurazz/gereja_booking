@@ -18,9 +18,18 @@
                 <label for="nama">Nama:</label>
                 <input type="text" id="nama" name="nama" required>
             </div>
-            <div class="form-group">
+            <!-- <div class="form-group">
                 <label for="distrik">Distrik:</label>
                 <input type="text" id="distrik" name="distrik" required>
+            </div>             -->
+            <div class="form-group">
+                <label for="distrik">Distrik:</label>
+                <select id="distrik" name="distrik" required>
+                    <option value="">Pilih Distrik</option>
+                    <% distrikList.forEach(distrik => { %>
+                        <option value="<%= distrik.nama_distrik %>"><%= distrik.nama_distrik %></option>
+                    <% }) %>
+                </select>
             </div>            
             <div class="form-group">
                 <label for="asal_sidang">Asal Sidang:</label>
