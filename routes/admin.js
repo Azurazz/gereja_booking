@@ -32,13 +32,15 @@ router.get('/', (req, res) => {
                 });
 
                 // Ambil semua data bookings untuk tabel
-                const bookingsQuery = 'SELECT * FROM bookings';
+                const bookingsQuery = 'SELECT bookings.*, distrik.nama_distrik FROM bookings LEFT JOIN distrik ON distrik.id = bookings.distrik';
+
                 db.query(bookingsQuery, (err, bookings) => {
                     if (err) {
                         console.error('Error fetching bookings:', err);
                         res.status(500).send('Internal Server Error');
                     } else {
                         // Render halaman admin-dashboard dengan data seat dan bookings
+                        console.error(bookings)
                         res.render('admin-dashboard', { seatData, bookings });
                     }
                 });

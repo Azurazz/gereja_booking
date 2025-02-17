@@ -2,20 +2,22 @@ const express = require('express');
 const router = express.Router();
 const db = require('../models/db');
 
-// Halaman Booking
+// Halaman Booking Gedung Yuditira
 router.get('/', (req, res) => {
-    const querySeat = 'SELECT blok_booking, SUM(jumlah_seat) AS total_seat FROM bookings GROUP BY blok_booking';
-    const queryDistrik = 'SELECT id, nama_distrik FROM distrik ORDER BY id ASC';
+    // res.render('booking_gedung_yudistira');
 
-    db.query(querySeat, (errSeat, resultsSeat) => {
-        if (errSeat) {
-            console.error('Error fetching booking data:', errSeat);
+    const bookingQuery = 'SELECT blok_booking, SUM(jumlah_seat) AS total_seat FROM bookings GROUP BY blok_booking';
+    const distrikQuery = 'SELECT id, nama_distrik FROM distrik';
+
+    db.query(bookingQuery, (err, bookingResults) => {
+        if (err) {
+            console.error('Error fetching booking data:', err);
             return res.status(500).send('Internal Server Error');
         }
 
-        db.query(queryDistrik, (errDistrik, resultsDistrik) => {
-            if (errDistrik) {
-                console.error('Error fetching distrik data:', errDistrik);
+        db.query(distrikQuery, (err, distrikResults) => {
+            if (err) {
+                console.error('Error fetching distrik data:', err);
                 return res.status(500).send('Internal Server Error');
             }
 
@@ -28,28 +30,33 @@ router.get('/', (req, res) => {
                 F: { max: 100, booked: 0 }
             };
 
-            resultsSeat.forEach(row => {
+            bookingResults.forEach(row => {
                 if (seatData[row.blok_booking]) {
                     seatData[row.blok_booking].booked = row.total_seat || 0;
                 }
             });
 
-            res.render('booking', { seatData, distrikList: resultsDistrik });
+            res.render('booking_gedung_yudistira', { seatData, distrikList: distrikResults });
         });
     });
 });
 
-
-// Proses Booking
+// Proses Booking Gedung 1
 router.post('/book', (req, res) => {
-    const { nama, distrik, asal_sidang, blok_booking, no_wa, jumlah_seat } = req.body;
+    const { nama, distrik, asal_sidang, no_wa, jumlah_seat, blok_booking } = req.body;
+
+    // Validasi: Pastikan jumlah seat adalah 1
+    if (jumlah_seat !== '1') {
+        return res.status(400).send('Jumlah seat harus 1.');
+    }
+
     const query = 'INSERT INTO bookings (nama, distrik, asal_sidang, blok_booking, no_wa, jumlah_seat) VALUES (?, ?, ?, ?, ?, ?)';
     db.query(query, [nama, distrik, asal_sidang, blok_booking, no_wa, jumlah_seat], (err, result) => {
         if (err) {
             console.error('Error during booking:', err);
             res.status(500).send('Internal Server Error');
         } else {
-            res.redirect('/booking');
+            res.redirect('/booking_gedung_yudistira');
         }
     });
 });
