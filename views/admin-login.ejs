@@ -9,18 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <div class="container">
-            <h1>Booking App</h1>
-            <nav>
-                <ul>
-                    <li><a href="/">Home</a></li>
-                    <li><a href="/booking">Booking</a></li>
-                    <li><a href="/admin">Admin</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
+    <%- include('partials/header') %>
 
     <main class="container">
         <h2>Admin Login</h2>
@@ -37,10 +26,6 @@
         </form>
     </main>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2023 Booking App. All rights reserved.</p>
-        </div>
-    </footer>
+    <%- include('partials/footer') %>
 </body>
 </html>

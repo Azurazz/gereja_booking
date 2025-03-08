@@ -1,5 +1,6 @@
-<!DOCTYPEhtml>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,95 +9,131 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
+
 <body>
-    <header>
-        <div class="container">
-            <h1>Booking App</h1>
-            <nav>
-                <ul>
-                    <li><a href="/">Home</a></li>
-                    <li><a href="/booking">Booking</a></li>
-                    <li><a href="/booking_gedung_1">Booking Gedung 1</a></li>
-                    <li><a href="/admin">Admin</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
+    <%- include('partials/header') %>
 
-    <main class="container">
-        <title class="text-center">Book Your Seat</title>
-        <form action="/booking/book" method="POST">
-            <div class="form-group">
-                <label for="nama">Nama:</label>
-                <input type="text" id="nama" name="nama" required>
-            </div>
-            <div class="form-group">
-                <label for="distrik">Distrik:</label>
-                <input type="text" id="distrik" name="distrik" required>
-            </div>            
-            <div class="form-group">
-                <label for="asal_sidang">Asal Sidang:</label>
-                <input type="text" id="asal_sidang" name="asal_sidang" required>
-            </div>            
-            <div class="form-group">
-                <label for="no_wa">No WA:</label>
-                <input type="text" id="no_wa" name="no_wa" required>
-            </div>
-            <div class="form-group">
-                <label for="blok_booking">Pilih Blok:</label>
-                <div class="image-container">
-                    <img src="/images/greja_layuot-1.png" alt="Greja Layout" class="layout-image">
+        <main class="container">
+            <h1 class="text-center">Book Your Seat</h1>
+            <form action="/booking/book" method="POST">
+                <div class="form-group">
+                    <label for="nama">Nama:</label>
+                    <input type="text" id="nama" name="nama" required>
                 </div>
-                <div class="seat-selection">
-                    <% const blocks = ['A', 'B', 'C', 'D', 'E', 'F']; %>
-                    <% blocks.forEach(blok => { %>
-                        <div class="seat-block" data-blok="<%= blok %>" data-max-seats="<%= seatData[blok].max %>">
-                            <div class="seat-label">Blok <%= blok %></div>
-                            <div class="seat-count"><%= seatData[blok].booked %>/<%= seatData[blok].max %></div>
-                        </div>
-                    <% }) %>
+                <div class="form-group">
+                    <label for="distrik">Distrik:</label>
+                    <select id="distrik" name="distrik" required>
+                        <option value="" selected disabled>Pilih Distrik!</option>
+                        <% distrikList.forEach(distrik=> { %>
+                            <option value="<%= distrik.id %>">
+                                <%= distrik.nama_distrik %>
+                            </option>
+                            <% }) %>
+                    </select>
                 </div>
-                <input type="hidden" id="blok_booking" name="blok_booking" required>
-            </div>
-            <div class="form-group">
-                <label for="jumlah_seat">Jumlah Seat:</label>
-                <input type="number" id="jumlah_seat" name="jumlah_seat" min="1" required>
-            </div>
-            <button type="submit" class="btn">Book Now</button>
-        </form>
-    </main>
+                <div class="form-group">
+                    <label for="asal_sidang">Asal Sidang:</label>
+                    <!-- mengambil data dari json berdasarkan id distrik -->
+                    <select id="asal_sidang" name="asal_sidang" required>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="no_wa">No WA:</label>
+                    <input type="text" id="no_wa" name="no_wa" required>
+                </div>
+                <div class="form-group">
+                    <label for="blok_booking">Pilih Blok:</label>
+                    <div class="image-container">
+                        <img src="/images/greja_layuot-1.png" alt="Greja Layout" class="layout-image">
+                    </div>
+                    <div class="seat-selection">
+                        <% const blocks=['A', 'B' , 'C' , 'D' , 'E' , 'F' ]; %>
+                            <% blocks.forEach(blok=> { %>
+                                <div class="seat-block" data-blok="<%= blok %>"
+                                    data-max-seats="<%= seatData[blok].max %>">
+                                    <div class="seat-label">Blok <%= blok %>
+                                    </div>
+                                    <div class="seat-count">
+                                        <%= seatData[blok].booked %>/<%= seatData[blok].max %>
+                                    </div>
+                                </div>
+                                <% }) %>
+                    </div>
+                    <input type="hidden" id="blok_booking" name="blok_booking" required>
+                </div>
+                <div class="form-group">
+                    <label for="jumlah_seat">Jumlah Seat:</label>
+                    <input type="number" id="jumlah_seat" name="jumlah_seat" min="1" max="1" value="1" readonly
+                        required>
+                </div>
+                <button type="submit" class="btn">Book Now</button>
+            </form>
+        </main>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2023 Booking App. All rights reserved.</p>
-        </div>
-    </footer>
+        <%- include('partials/footer') %>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const seatBlocks = document.querySelectorAll('.seat-block');
-            const blokBookingInput = document.getElementById('blok_booking');
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const seatBlocks = document.querySelectorAll('.seat-block');
+                    const blokBookingInput = document.getElementById('blok_booking');
+                    const jumlahSeatInput = document.getElementById('jumlah_seat');
 
-            // Tambahkan event listener untuk setiap blok
-            seatBlocks.forEach(block => {
-                block.addEventListener('click', () => {
-                    // Hapus class 'selected' dari semua blok
-                    seatBlocks.forEach(b => b.classList.remove('selected'));
+                    seatBlocks.forEach(block => {
+                        block.addEventListener('click', () => {
+                            seatBlocks.forEach(b => b.classList.remove('selected'));
+                            block.classList.add('selected');
+                            const selectedBlok = block.getAttribute('data-blok');
+                            blokBookingInput.value = selectedBlok;
 
-                    // Tambahkan class 'selected' ke blok yang diklik
-                    block.classList.add('selected');
+                            // Set max value untuk input jumlah seat berdasarkan kapasitas blok
+                            const maxSeats = block.getAttribute('data-max-seats');
+                            const bookedSeats = block.querySelector('.seat-count').textContent.split('/')[0];
+                            const availableSeats = maxSeats - bookedSeats;
+                            jumlahSeatInput.setAttribute('max', availableSeats);
+                            jumlahSeatInput.setAttribute('placeholder', `Maksimal ${availableSeats} seat`);
+                        });
+                    });
 
-                    // Ambil nilai blok yang dipilih
-                    const selectedBlok = block.getAttribute('data-blok');
+                    // Validasi saat form disubmit
+                    document.querySelector('form').addEventListener('submit', (e) => {
+                        const selectedBlok = blokBookingInput.value;
+                        const jumlahSeat = parseInt(jumlahSeatInput.value);
+                        const maxSeats = parseInt(jumlahSeatInput.getAttribute('max'));
 
-                    // Isi nilai blok yang dipilih ke input tersembunyi
-                    blokBookingInput.value = selectedBlok;
+                        if (!selectedBlok) {
+                            e.preventDefault();
+                            alert('Silakan pilih blok terlebih dahulu.');
+                        }
 
-                    // Debugging: Cetak blok yang dipilih
-                    console.log('Blok yang dipilih:', selectedBlok);
+                        if (jumlahSeat > maxSeats) {
+                            e.preventDefault();
+                            alert(`Jumlah seat melebihi kapasitas blok. Maksimal seat yang tersedia: ${maxSeats}`);
+                        }
+                    });
                 });
-            });
-        });
-    </script>
+            </script>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const distrikSelect = document.getElementById('distrik');
+                    const asalSidangSelect = document.getElementById('asal_sidang');
+
+                    distrikSelect.addEventListener('change', () => {
+                        const distrikId = distrikSelect.value;
+                        fetch(`/booking/asal-sidang/${distrikId}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                asalSidangSelect.innerHTML = '';
+                                data.forEach(asalSidang => {
+                                    const option = document.createElement('option');
+                                    option.value = asalSidang.nama_sidang;
+                                    option.textContent = asalSidang.nama_sidang;
+                                    asalSidangSelect.appendChild(option);
+                                });
+                            });
+                    });
+                });
+            </script>
 </body>
+
 </html>

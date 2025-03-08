@@ -30,7 +30,7 @@
 
             <!-- Chart Section -->
             <div class="chart-grid">
-                <% const blocks=['A', 'B' , 'C' , 'D' , 'E' , 'F' ,'Yudistira' ]; %>
+                <% const blocks=['Yudistira' ]; %>
                     <% blocks.forEach(blok=> { %>
                         <div class="chart-card">
                             <h3>Blok <%= blok %>
@@ -146,12 +146,6 @@
 
             <script>
                 const seatData = {
-                    A: { max: <%= seatData.A.max %>, booked: <%= seatData.A.booked %> },
-                    B: { max: <%= seatData.B.max %>, booked: <%= seatData.B.booked %> },
-                    C: { max: <%= seatData.C.max %>, booked: <%= seatData.C.booked %> },
-                    D: { max: <%= seatData.D.max %>, booked: <%= seatData.D.booked %> },
-                    E: { max: <%= seatData.E.max %>, booked: <%= seatData.E.booked %> },
-                    F: { max: <%= seatData.F.max %>, booked: <%= seatData.F.booked %> },
                     Yudistira: { max: <%= seatData.Yudistira.max %>, booked: <%= seatData.Yudistira.booked %> }
                 };
 
@@ -193,24 +187,25 @@
                 });
             </script>
 
-
             <script>
-                const distrikSelect = document.getElementById('editDistrik');
-                const asalSidangSelect = document.getElementById('asal_sidang');
+                document.addEventListener('DOMContentLoaded', () => {
+                    const distrikSelect = document.getElementById('editDistrik');
+                    const asalSidangSelect = document.getElementById('asal_sidang');
 
-                distrikSelect.addEventListener('change', () => {
-                    const distrikId = distrikSelect.value;
-                    fetch(`/booking/asal-sidang/${distrikId}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            asalSidangSelect.innerHTML = '';
-                            data.forEach(asalSidang => {
-                                const option = document.createElement('option');
-                                option.value = asalSidang.nama_sidang;
-                                option.textContent = asalSidang.nama_sidang;
-                                asalSidangSelect.appendChild(option);
+                    distrikSelect.addEventListener('change', () => {
+                        const distrikId = distrikSelect.value;
+                        fetch(`/booking/asal-sidang/${distrikId}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                asalSidangSelect.innerHTML = '';
+                                data.forEach(asalSidang => {
+                                    const option = document.createElement('option');
+                                    option.value = asalSidang.nama_sidang;
+                                    option.textContent = asalSidang.nama_sidang;
+                                    asalSidangSelect.appendChild(option);
+                                });
                             });
-                        });
+                    });
                 });
             </script>
 </body>

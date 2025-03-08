@@ -4,14 +4,21 @@ const db = require('../models/db');
 
 // Halaman Booking
 router.get('/', (req, res) => {
-    // Ambil data booking dari database
-    const query = 'SELECT blok_booking, SUM(jumlah_seat) AS total_seat FROM bookings GROUP BY blok_booking';
-    db.query(query, (err, results) => {
+    const bookingQuery = 'SELECT blok_booking, SUM(jumlah_seat) AS total_seat FROM bookings GROUP BY blok_booking';
+    const distrikQuery = 'SELECT id, nama_distrik FROM distrik';
+
+    db.query(bookingQuery, (err, bookingResults) => {
         if (err) {
             console.error('Error fetching booking data:', err);
-            res.status(500).send('Internal Server Error');
-        } else {
-            // Format data untuk memudahkan penggunaan di EJS
+            return res.status(500).send('Internal Server Error');
+        }
+
+        db.query(distrikQuery, (err, distrikResults) => {
+            if (err) {
+                console.error('Error fetching distrik data:', err);
+                return res.status(500).send('Internal Server Error');
+            }
+
             const seatData = {
                 A: { max: 100, booked: 0 },
                 B: { max: 140, booked: 0 },
@@ -21,16 +28,28 @@ router.get('/', (req, res) => {
                 F: { max: 100, booked: 0 }
             };
 
-            // Update jumlah seat yang sudah terbooking
-            results.forEach(row => {
+            bookingResults.forEach(row => {
                 if (seatData[row.blok_booking]) {
                     seatData[row.blok_booking].booked = row.total_seat || 0;
                 }
             });
 
-            // Render halaman booking dengan data seat
-            res.render('booking', { seatData });
+            res.render('booking', { seatData, distrikList: distrikResults });
+        });
+    });
+});
+
+// /booking/asal-sidang/${distrikId}
+router.get('/asal-sidang/:distrikId', (req, res) => {
+    const { distrikId } = req.params;
+    const query = 'SELECT id, nama_sidang FROM sidang_jemaat WHERE id_distrik = ?';
+    db.query(query, [distrikId], (err, results) => {
+        if (err) {
+            console.error('Error fetching asal sidang data:', err);
+            return res.status(500).send('Internal Server Error');
         }
+
+        res.json(results);
     });
 });
 

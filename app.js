@@ -25,7 +25,8 @@ app.use('/booking', bookingRoutes);
 app.use('/admin', adminRoutes);
 app.use('/booking_gedung_1', bookingGedung1Routes);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+    console.log(`app running at http://localhost:${PORT}`)
 });

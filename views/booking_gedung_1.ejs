@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,53 +9,87 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
+
 <body>
-    <header>
-        <div class="container">
-            <h1>Booking App</h1>
-            <nav>
-                <ul>
-                    <li><a href="/">Home</a></li>
-                    <li><a href="/booking">Booking</a></li>
-                    <li><a href="/booking_gedung_1">Booking Gedung 1</a></li>
-                    <li><a href="/admin">Admin</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
+    <%- include('partials/header') %>
 
-    <main class="container">
-        <h2 class="text-center">Book Your Seat in Gedung 1</h2>
-        <form action="/booking_gedung_1/book" method="POST">
-            <div class="form-group">
-                <label for="nama">Nama:</label>
-                <input type="text" id="nama" name="nama" required>
-            </div>
-            <div class="form-group">
-                <label for="distrik">Distrik:</label>
-                <input type="text" id="distrik" name="distrik" required>
-            </div>            
-            <div class="form-group">
-                <label for="asal_sidang">Asal Sidang:</label>
-                <input type="text" id="asal_sidang" name="asal_sidang" required>
-            </div>
-            <div class="form-group">
-                <label for="no_wa">No WA:</label>
-                <input type="text" id="no_wa" name="no_wa" required>
-            </div>
-            <div class="form-group">
-                <label for="jumlah_seat">Jumlah Seat:</label>
-                <input type="number" id="jumlah_seat" name="jumlah_seat" min="1" max="1" value="1" readonly required>
-            </div>
-            <input type="hidden" id="blok_booking" name="blok_booking" value="Gedung 1">
-            <button type="submit" class="btn">Book Now</button>
-        </form>
-    </main>
+        <main class="container">
+            <h2 class="text-center">Book Your Seat in Gedung Yudistira</h2>
+            <form action="/booking_gedung_1/book" method="POST">
+                <div class="form-group">
+                    <label for="nama">Nama:</label>
+                    <input type="text" id="nama" name="nama" required>
+                </div>
+                <div class="form-group">
+                    <label for="distrik">Distrik:</label>
+                    <select id="distrik" name="distrik" required>
+                        <% distrikList.forEach(distrik=> { %>
+                            <option value="<%= distrik.id %>">
+                                <%= distrik.nama_distrik %>
+                            </option>
+                            <% }) %>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="asal_sidang">Asal Sidang:</label>
+                    <!-- mengambil data dari json berdasarkan id distrik -->
+                    <select id="asal_sidang" name="asal_sidang" required>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="no_wa">No WA:</label>
+                    <input type="text" id="no_wa" name="no_wa" required>
+                </div>
+                <div class="form-group">
+                    <label for="jumlah_seat">Jumlah Seat:</label>
+                    <input type="number" id="jumlah_seat" name="jumlah_seat" min="1" max="1" value="1" readonly
+                        required>
+                </div>
+                <input type="hidden" id="blok_booking" name="blok_booking" value="Gedung 1">
+                <button type="submit" class="btn">Book Now</button>
+            </form>
+        </main>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2023 Booking App. All rights reserved.</p>
-        </div>
-    </footer>
+        <%- include('partials/footer') %>
+
+            <script>
+
+                const seatData = {
+                    Yudistira: { max: <%= seatData.Yudistira.max %>, booked: <%= seatData.Yudistira.booked %> }
+                };
+                const jumlahSeat = document.getElementById('jumlah_seat');
+                const nama = document.getElementById('nama');
+
+                nama.addEventListener('change', () => {
+
+                    jumlahSeat.setAttribute('placeholder', `Maksimal ${seatData.Yudistira.max - seatData.Yudistira.booked} seat`);
+                    jumlahSeat.setAttribute('max', seatData.Yudistira.max - seatData.Yudistira.booked);
+                });
+
+            </script>
+
+
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const distrikSelect = document.getElementById('distrik');
+                    const asalSidangSelect = document.getElementById('asal_sidang');
+
+                    distrikSelect.addEventListener('change', () => {
+                        const distrikId = distrikSelect.value;
+                        fetch(`/booking/asal-sidang/${distrikId}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                asalSidangSelect.innerHTML = '';
+                                data.forEach(asalSidang => {
+                                    const option = document.createElement('option');
+                                    option.value = asalSidang.nama_sidang;
+                                    option.textContent = asalSidang.nama_sidang;
+                                    asalSidangSelect.appendChild(option);
+                                });
+                            });
+                    });
+                });
+            </script>
 </body>
+
 </html>

@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = row.getAttribute('data-id'); // Ambil ID dari atribut data-id
             const nama = row.cells[0].textContent.trim();
             const distrik = row.cells[1].textContent.trim(); // Ambil data distrik
-            const asalSidang = row.cells[2].textContent.trim();
+            const asalSidangs = row.cells[2].textContent.trim();
             const blokBooking = row.cells[3].textContent.trim();
             const noWa = row.cells[4].textContent.trim();
             const jumlahSeat = row.cells[5].textContent.trim();
@@ -23,14 +23,41 @@ document.addEventListener('DOMContentLoaded', () => {
             // Isi form edit dengan data yang ada
             document.getElementById('editId').value = id;
             document.getElementById('editNama').value = nama;
-            document.getElementById('editDistrik').value = distrik;
-            document.getElementById('editAsalSidang').value = asalSidang;
+            // document.getElementById('editAsalSidang').value = asalSidang;
             document.getElementById('editBlokBooking').value = blokBooking;
             document.getElementById('editNoWa').value = noWa;
             document.getElementById('editJumlahSeat').value = jumlahSeat;
+            
+            const editDistrik = document.getElementById('editDistrik');
+            const asalSidangSelect = document.getElementById('asal_sidang');
+            // memilih distrik yang sesuai
+            for (let i = 0; i < editDistrik.options.length; i++) {
+                if (editDistrik.options[i].text === distrik) {
+                    editDistrik.selectedIndex = i;
+                    fetch(`/booking/asal-sidang/${editDistrik.options[i].value}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                asalSidangSelect.innerHTML = '';
+                                data.forEach(asalSidang => {
+                                    const option = document.createElement('option');
+                                    option.value = asalSidang.nama_sidang;
+                                    option.textContent = asalSidang.nama_sidang;
+                                    asalSidangSelect.appendChild(option);
+                                    // memilih asal sidang yang sesuai
+                                    for(let j = 0;j < asalSidangSelect.options.length; j++) {
+                                        if (asalSidangSelect.options[j].text === asalSidangs) {
+                                            asalSidangSelect.selectedIndex = j;
+                                        }
+                                    }
+                                });
+                            });
+                    break;
+                }
+            }
+
 
             // Debugging: Cetak data yang diambil
-            console.log('Data yang diambil:', { id, nama, distrik, asalSidang, blokBooking, noWa, jumlahSeat });
+            console.log('Data yang diambil:', { id, nama, distrik, asalSidangs, blokBooking, noWa, jumlahSeat });
 
             // Tampilkan modal
             modal.style.display = 'block';

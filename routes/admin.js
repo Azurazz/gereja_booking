@@ -8,41 +8,92 @@ router.get('/', (req, res) => {
         res.render('admin-login', { error: null });
     } else {
         // Ambil data booking dari database
-        const query = 'SELECT blok_booking, SUM(jumlah_seat) AS total_seat FROM bookings GROUP BY blok_booking';
-        db.query(query, (err, results) => {
+        const bookingQuery = 'SELECT blok_booking, SUM(jumlah_seat) AS total_seat FROM bookings GROUP BY blok_booking';
+        const distrikQuery = 'SELECT id, nama_distrik FROM distrik';
+
+        db.query(bookingQuery, (err, bookingResults) => {
             if (err) {
                 console.error('Error fetching booking data:', err);
-                res.status(500).send('Internal Server Error');
-            } else {
-                // Format data untuk memudahkan penggunaan di EJS
+                return res.status(500).send('Internal Server Error');
+            }
+
+            db.query(distrikQuery, (err, distrikResults) => {
+                if (err) {
+                    console.error('Error fetching distrik data:', err);
+                    return res.status(500).send('Internal Server Error');
+                }
+
                 const seatData = {
                     A: { max: 100, booked: 0 },
                     B: { max: 140, booked: 0 },
                     C: { max: 140, booked: 0 },
                     D: { max: 140, booked: 0 },
                     E: { max: 140, booked: 0 },
-                    F: { max: 100, booked: 0 }
+                    F: { max: 100, booked: 0 },
+                    Yudistira: { max: 200, booked: 0 }
                 };
 
-                // Update jumlah seat yang sudah terbooking
-                results.forEach(row => {
+                bookingResults.forEach(row => {
                     if (seatData[row.blok_booking]) {
                         seatData[row.blok_booking].booked = row.total_seat || 0;
                     }
                 });
 
-                // Ambil semua data bookings untuk tabel
-                const bookingsQuery = 'SELECT * FROM bookings';
+                const bookingsQuery = 'SELECT b.*, d.nama_distrik FROM bookings b LEFT JOIN distrik d ON b.distrik = d.id';
                 db.query(bookingsQuery, (err, bookings) => {
                     if (err) {
                         console.error('Error fetching bookings:', err);
-                        res.status(500).send('Internal Server Error');
-                    } else {
-                        // Render halaman admin-dashboard dengan data seat dan bookings
-                        res.render('admin-dashboard', { seatData, bookings });
+                        return res.status(500).send('Internal Server Error');
+                    }
+
+                    res.render('admin-dashboard', { seatData, bookings, distrikList: distrikResults });
+                });
+            });
+        });
+    }
+});
+
+// dashboard blok yudistira
+router.get('/yudis', (req, res) => {
+    if (!req.session.loggedIn) {
+        res.render('admin-login', { error: null });
+    }
+    else {
+        const bookingQuery = 'SELECT blok_booking, SUM(jumlah_seat) AS total_seat FROM bookings  where blok_booking = "Yudistira" GROUP BY blok_booking';
+        const distrikQuery = 'SELECT id, nama_distrik FROM distrik';
+
+        db.query(bookingQuery, (err, bookingResults) => {
+            if (err) {
+                console.error('Error fetching booking data:', err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            db.query(distrikQuery, (err, distrikResults) => {
+                if (err) {
+                    console.error('Error fetching distrik data:', err);
+                    return res.status(500).send('Internal Server Error');
+                }
+
+                const seatData = {
+                    Yudistira: { max: 200, booked: 0 }
+                };
+
+                bookingResults.forEach(row => {
+                    if (seatData[row.blok_booking]) {
+                        seatData[row.blok_booking].booked = row.total_seat || 0;
                     }
                 });
-            }
+
+                const bookingsQuery = 'SELECT b.*, d.nama_distrik FROM bookings b LEFT JOIN distrik d ON b.distrik = d.id WHERE blok_booking = "Yudistira"';
+                db.query(bookingsQuery, (err, bookings) => {
+                    if (err) {
+                        console.error('Error fetching bookings:', err);
+                        return res.status(500).send('Internal Server Error');
+                    }
+
+                    res.render('admin-gedung', { seatData, bookings, distrikList: distrikResults });
+                });
+            });
         });
     }
 });
@@ -79,18 +130,9 @@ router.post('/update-booking/:id', (req, res) => {
     const { id } = req.params;
     const { nama, distrik, asal_sidang, blok_booking, no_wa, jumlah_seat } = req.body;
 
-    // Debugging: Cetak data yang diterima
-    console.log('Data yang diterima:', { id, nama, distrik, asal_sidang, blok_booking, no_wa, jumlah_seat });
-
-    // Validasi: Pastikan ID ada dan valid
-    if (!id || isNaN(id)) {
-        return res.status(400).json({ success: false, message: 'ID tidak valid.' });
-    }
-
-    // Buat query dinamis berdasarkan field yang dikirim
     let query = 'UPDATE bookings SET ';
     const values = [];
-    if (nama !== undefined && nama.trim() !== '') { // Periksa apakah field ada dan tidak kosong
+    if (nama !== undefined && nama.trim() !== '') {
         query += 'nama = ?, ';
         values.push(nama);
     }
@@ -115,31 +157,20 @@ router.post('/update-booking/:id', (req, res) => {
         values.push(jumlah_seat);
     }
 
-    // Jika tidak ada field yang diupdate, kembalikan error
     if (values.length === 0) {
         return res.status(400).json({ success: false, message: 'Tidak ada data yang diupdate.' });
     }
 
-    // Hapus koma terakhir dan tambahkan WHERE clause
-    query = query.slice(0, -2); // Hapus ", " terakhir
+    query = query.slice(0, -2);
     query += ' WHERE id = ?';
     values.push(id);
 
-    // Debugging: Cetak query dan values
-    console.log('Query yang dijalankan:', query);
-    console.log('Values:', values);
-
-    // Jalankan query ke database
     db.query(query, values, (err, result) => {
         if (err) {
             console.error('Error updating booking:', err);
             return res.status(500).json({ success: false, message: 'Gagal mengupdate data.' });
         }
 
-        // Debugging: Cetak hasil query
-        console.log('Hasil query:', result);
-
-        // Periksa apakah data benar-benar terupdate
         if (result.affectedRows > 0) {
             res.json({ success: true, message: 'Data berhasil diupdate.' });
         } else {
@@ -152,10 +183,6 @@ router.post('/update-booking/:id', (req, res) => {
 router.delete('/delete-booking/:id', (req, res) => {
     const { id } = req.params;
 
-    // Debugging: Cetak ID yang diterima
-    console.log('ID yang diterima:', id);
-
-    // Validasi: Pastikan ID ada dan valid
     if (!id || isNaN(id)) {
         return res.status(400).json({ success: false, message: 'ID tidak valid.' });
     }
@@ -167,10 +194,6 @@ router.delete('/delete-booking/:id', (req, res) => {
             return res.status(500).json({ success: false, message: 'Gagal menghapus data.' });
         }
 
-        // Debugging: Cetak hasil query
-        console.log('Hasil query:', result);
-
-        // Periksa apakah data benar-benar terhapus
         if (result.affectedRows > 0) {
             res.json({ success: true, message: 'Data berhasil dihapus.' });
         } else {
