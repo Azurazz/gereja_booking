@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking Gedung 1 - Booking App</title>
+    <title>Booking - Gedung Yudistira</title>
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -14,10 +14,10 @@
     <%- include('partials/header') %>
 
         <main class="container">
-            <h2 class="text-center">Book Your Seat in Gedung Yudistira</h2>
+            <h2 class="text-center">Pesan Tempat Duduk Anda di Gedung Yudistira</h2>
             <form action="/booking_gedung_1/book" method="POST">
                 <div class="form-group">
-                    <label for="nama">Nama:</label>
+                    <label for="nama">Nama Lengkap:</label>
                     <input type="text" id="nama" name="nama" required>
                 </div>
                 <div class="form-group">
@@ -31,14 +31,14 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="asal_sidang">Asal Sidang:</label>
-                    <!-- mengambil data dari json berdasarkan id distrik -->
+                    <label for="asal_sidang">Asal Sidang Jemaat:</label>
                     <select id="asal_sidang" name="asal_sidang" required>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="no_wa">No WA:</label>
-                    <input type="text" id="no_wa" name="no_wa" required>
+                    <label for="no_wa">No. WhatsApp:</label>
+                    <input type="text" id="no_wa" name="no_wa" required pattern="([1-9][0-9]{7,14}|08[0-9]{8,11})"
+                        title="Nomor WhatsApp harus berupa 08XXXXXXXXXX atau 628XXXXXXXXX">
                 </div>
                 <div class="form-group">
                     <label for="jumlah_seat">Jumlah Seat:</label>
@@ -87,6 +87,32 @@
                                     asalSidangSelect.appendChild(option);
                                 });
                             });
+                    });
+                });
+            </script>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const noWaInput = document.getElementById('no_wa');
+
+                    noWaInput.addEventListener('input', () => {
+                        let value = noWaInput.value.replace(/\D/g, '');
+                        noWaInput.value = value;
+
+                        const waRegex = /^([1-9][0-9]{7,14}|08[0-9]{8,11})$/;
+
+                        if (!waRegex.test(value)) {
+                            noWaInput.setCustomValidity('Nomor WhatsApp harus dalam format 08XXXXXXXXXX atau 628XXXXXXXXX.');
+                        } else {
+                            noWaInput.setCustomValidity('');
+                        }
+                    });
+
+                    document.querySelector('form').addEventListener('submit', (e) => {
+                        if (!noWaInput.checkValidity()) {
+                            e.preventDefault();
+                            alert(noWaInput.validationMessage);
+                        }
                     });
                 });
             </script>
