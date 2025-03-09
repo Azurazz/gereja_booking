@@ -1,15 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../models/db');
-
-const SEAT_LIMITS = {
-    A: 100,
-    B: 140,
-    C: 140,
-    D: 140,
-    E: 140,
-    F: 100
-};
+const SEAT_LIMITS = require('../config/seatLimits');
 
 const getSeatData = async () => {
     return new Promise((resolve, reject) => {
