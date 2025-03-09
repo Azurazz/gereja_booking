@@ -2,31 +2,28 @@ const express = require('express');
 const router = express.Router();
 const db = require('../models/db');
 
-// Halaman Booking
-router.get('/', (req, res) => {
-    const bookingQuery = 'SELECT blok_booking, SUM(jumlah_seat) AS total_seat FROM bookings GROUP BY blok_booking';
-    const distrikQuery = 'SELECT id, nama_distrik FROM distrik';
+const SEAT_LIMITS = {
+    A: 100,
+    B: 140,
+    C: 140,
+    D: 140,
+    E: 140,
+    F: 100
+};
 
-    db.query(bookingQuery, (err, bookingResults) => {
-        if (err) {
-            console.error('Error fetching booking data:', err);
-            return res.status(500).send('Internal Server Error');
-        }
-
-        db.query(distrikQuery, (err, distrikResults) => {
+const getSeatData = async () => {
+    return new Promise((resolve, reject) => {
+        const bookingQuery = 'SELECT blok_booking, SUM(jumlah_seat) AS total_seat FROM bookings GROUP BY blok_booking';
+        
+        db.query(bookingQuery, (err, bookingResults) => {
             if (err) {
-                console.error('Error fetching distrik data:', err);
-                return res.status(500).send('Internal Server Error');
+                return reject(err);
             }
 
-            const seatData = {
-                A: { max: 100, booked: 0 },
-                B: { max: 140, booked: 0 },
-                C: { max: 140, booked: 0 },
-                D: { max: 140, booked: 0 },
-                E: { max: 140, booked: 0 },
-                F: { max: 100, booked: 0 }
-            };
+            const seatData = {};
+            Object.keys(SEAT_LIMITS).forEach(blok => {
+                seatData[blok] = { max: SEAT_LIMITS[blok], booked: 0 };
+            });
 
             bookingResults.forEach(row => {
                 if (seatData[row.blok_booking]) {
@@ -34,15 +31,37 @@ router.get('/', (req, res) => {
                 }
             });
 
-            res.render('booking', { seatData, distrikList: distrikResults });
+            resolve(seatData);
         });
     });
+};
+
+/** ROUTES */
+
+router.get('/', async (req, res) => {
+    try {
+        const distrikQuery = 'SELECT id, nama_distrik FROM distrik';
+        const [seatData, distrikResults] = await Promise.all([
+            getSeatData(),
+            new Promise((resolve, reject) => {
+                db.query(distrikQuery, (err, results) => {
+                    if (err) reject(err);
+                    else resolve(results);
+                });
+            })
+        ]);
+
+        res.render('booking', { seatData, distrikList: distrikResults });
+    } catch (err) {
+        console.error('Error fetching data:', err);
+        res.status(500).send('Internal Server Error');
+    }
 });
 
-// /booking/asal-sidang/${distrikId}
 router.get('/asal-sidang/:distrikId', (req, res) => {
     const { distrikId } = req.params;
     const query = 'SELECT id, nama_sidang FROM sidang_jemaat WHERE id_distrik = ?';
+    
     db.query(query, [distrikId], (err, results) => {
         if (err) {
             console.error('Error fetching asal sidang data:', err);
@@ -53,16 +72,56 @@ router.get('/asal-sidang/:distrikId', (req, res) => {
     });
 });
 
-// Proses Booking
 router.post('/book', (req, res) => {
     const { nama, distrik, asal_sidang, blok_booking, no_wa, jumlah_seat } = req.body;
-    const query = 'INSERT INTO bookings (nama, distrik, asal_sidang, blok_booking, no_wa, jumlah_seat) VALUES (?, ?, ?, ?, ?, ?)';
-    db.query(query, [nama, distrik, asal_sidang, blok_booking, no_wa, jumlah_seat], (err, result) => {
+
+    db.beginTransaction(async (err) => {
         if (err) {
-            console.error('Error during booking:', err);
-            res.status(500).send('Internal Server Error');
-        } else {
-            res.redirect('/booking');
+            console.error('Error starting transaction:', err);
+            return res.status(500).send('Internal Server Error');
+        }
+
+        try {
+            const checkQuery = 'SELECT SUM(jumlah_seat) AS total_seat FROM bookings WHERE blok_booking = ? FOR UPDATE';
+            const results = await new Promise((resolve, reject) => {
+                db.query(checkQuery, [blok_booking], (err, results) => {
+                    if (err) reject(err);
+                    else resolve(results);
+                });
+            });
+
+            const totalBooked = results[0].total_seat || 0;
+            const maxSeats = SEAT_LIMITS[blok_booking];
+
+            if (totalBooked + parseInt(jumlah_seat) > maxSeats) {
+                return db.rollback(() => {
+                    res.status(400).send('Jumlah seat tidak mencukupi. Silakan pilih blok lain.');
+                });
+            }
+
+            const insertQuery = 'INSERT INTO bookings (nama, distrik, asal_sidang, blok_booking, no_wa, jumlah_seat) VALUES (?, ?, ?, ?, ?, ?)';
+            await new Promise((resolve, reject) => {
+                db.query(insertQuery, [nama, distrik, asal_sidang, blok_booking, no_wa, jumlah_seat], (err, result) => {
+                    if (err) reject(err);
+                    else resolve(result);
+                });
+            });
+
+            db.commit(err => {
+                if (err) {
+                    return db.rollback(() => {
+                        console.error('Error committing transaction:', err);
+                        res.status(500).send('Internal Server Error');
+                    });
+                }
+                res.redirect('/booking');
+            });
+
+        } catch (error) {
+            db.rollback(() => {
+                console.error('Error during booking process:', error);
+                res.status(500).send('Internal Server Error');
+            });
         }
     });
 });
