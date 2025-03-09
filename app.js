@@ -21,9 +21,9 @@ app.use(session({
 }));
 
 app.use('/', homeRoutes); // Gunakan homeRoutes
-app.use('/booking', bookingRoutes);
+app.use('/booking', bookingRoutes); // Gedung Hastina
 app.use('/admin', adminRoutes);
-app.use('/booking_gedung_1', bookingGedung1Routes);
+app.use('/booking_gedung_1', bookingGedung1Routes); // Gedung Yudistira
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
