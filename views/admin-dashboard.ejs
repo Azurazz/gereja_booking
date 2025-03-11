@@ -52,11 +52,13 @@
                         <option value="<%= distrik %>"><%= distrik %></option>
                     <% }) %>
                 </select>
-            </div>                
+            </div>
+            <button id="export-to-excel">Export ke Excel</button>         
 
             <table id="bookingTable">
                 <thead>
                     <tr>
+                        <th>Booking ID</th>
                         <th>Nama</th>
                         <th>Distrik</th>
                         <th>Asal Sidang</th>
@@ -68,8 +70,11 @@
                 </thead>
                 <tbody>
                     <% if (bookings && bookings.length> 0) { %>
-                        <% bookings.forEach(booking=> { %>
+                        <% bookings.sort((a, b) => b.id - a.id).forEach(booking => { %>
                         <tr data-id="<%= booking.id %>">
+                            <td>
+                                <%= booking.id %>
+                            </td>
                             <td>
                                 <%= booking.nama %>
                             </td>
@@ -127,7 +132,6 @@
                 </div>
                 <div class="form-group">
                     <label for="editAsalSidang">Asal Sidang:</label>
-                    <!-- mengambil data dari json berdasarkan id distrik -->
                     <select id="asal_sidang" name="asal_sidang" required>
                     </select>
                 </div>
@@ -226,6 +230,7 @@
 
         distrikSelect.addEventListener('change', () => {
             const distrikId = distrikSelect.value;
+
             fetch(`/booking/asal-sidang/${distrikId}`)
                 .then(res => res.json())
                 .then(data => {
@@ -248,14 +253,14 @@
 
     <script>
         $(document).ready(function () {
-            var table = $('#bookingTable').DataTable({
+            let table = $('#bookingTable').DataTable({
                 "paging": true,
                 "searching": true,
                 "ordering": true,
                 "info": true,
                 "responsive": true,
-                "pageLength": 25,
-                "lengthMenu": [25, 50],
+                "pageLength": 10,
+                "lengthMenu": [10, 25, 50],
                 "language": {
                     "search": "Cari:",
                     "lengthMenu": "Tampilkan _MENU_ entri",
@@ -266,14 +271,27 @@
                         "next": "Berikutnya",
                         "previous": "Sebelumnya"
                     }
-                }
+                },
+                "order": [[0, "desc"]]
             });
 
             $('#filterDistrik').on('change', function () {
-                var selectedValue = $(this).val();
+                let selectedValue = $(this).val();
                 table.column(1).search(selectedValue).draw();
             });
         });
+    </script>
+
+    <script>
+        /**
+         * Redirects to the export-excel route, which will force the
+         * browser to download the bookings data as an Excel file.
+         */
+        const exportToExcel = () => {
+          window.location.href = '/admin/export-excel';
+        };
+        
+        document.getElementById('export-to-excel').addEventListener('click', exportToExcel);
     </script>
 </body>
 
