@@ -1,29 +1,24 @@
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Admin Dashboard - Booking App</title>
 
     <link rel="stylesheet" href="/css/styles.css">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <script src="/js/scripts.js" defer></script>
 
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 </head>
 
 <body>
-
     <%- include('partials/header') %>
         <main class="dashboard-container">
             <h2>Admin Dashboard</h2>
@@ -48,7 +43,8 @@
 
             <!-- Table Section -->
             <div class="table-responsive">
-                <table>
+                <!-- <table> -->
+                <table id="bookingTable">
                     <thead>
                         <tr>
                             <th>Nama</th>
@@ -56,7 +52,7 @@
                             <th>Asal Sidang</th>
                             <th>Blok Booking</th>
                             <th>No WA</th>
-                            <th>Jumlah Seat</th>
+                            <!-- <th>Jumlah Seat</th> -->
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -79,9 +75,9 @@
                                     <td>
                                         <%= booking.no_wa %>
                                     </td>
-                                    <td>
-                                        <%= booking.jumlah_seat %>
-                                    </td>
+                                    <!-- <td>
+                                    <%= booking.jumlah_seat %>
+                                </td> -->
                                     <td>
                                         <button class="btn-edit" data-id="<%= booking.id %>">Edit</button>
                                         <button class="btn-delete" data-id="<%= booking.id %>">Hapus</button>
@@ -213,6 +209,36 @@
                         });
                 });
             </script>
+
+            <!-- jQuery (wajib untuk DataTables) -->
+            <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+            <!-- DataTables JS -->
+            <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+            <script>
+                $(document).ready(function () {
+                    $('table').DataTable({
+                        "paging": true,
+                        "searching": true,
+                        "ordering": true,
+                        "info": true,
+                        "responsive": true,
+                        "pageLength": 25,
+                        "lengthMenu": [25, 50],
+                        "language": {
+                            "search": "Cari:",
+                            "lengthMenu": "Tampilkan _MENU_ entri",
+                            "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+                            "paginate": {
+                                "first": "Awal",
+                                "last": "Akhir",
+                                "next": "Berikutnya",
+                                "previous": "Sebelumnya"
+                            }
+                        }
+                    });
+                });
+            </script>
+
 </body>
 
 </html>
