@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Berhasil</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-image: url('/images/background-image.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        .success-container {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+            padding-top: 30px;
+            padding-bottom: 30px;
+            padding-left: 50px;
+            padding-right: 50px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            width: 65%;
+            margin: 20px auto;
+            /* overflow-y: scroll; */
+            /* max-height: 80vh; */
+        }
+
+        .success-container .logo {
+            display: block;
+            margin: 0 auto;
+            width: 200px;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .success-container h2 {
+            text-align: center;
+        }
+        
+        .table-striped {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        
+        .table-striped th, .table-striped td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        
+        .table-striped th {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <img class="logo" src="/images/hari-anak-logo-2.png" alt="HA 2025 Logo">
+        <h2>Pemesanan Berhasil!</h2>
+        <p>Terima kasih! Data yang Anda masukkan telah berhasil diproses.</p>
+
+        <p class="download-info">
+            Dokumen Bukti Pemesanan Anda akan didownload secara otomatis. Jika belum, silakan klik tombol di bawah ini:
+        </p>
+        <a href="#" class="download-btn" onclick="alert('Coming Soon!')">Download Bukti Pemesanan (PDF)</a>
+
+        <p><strong>Mohon tunjukkan Dokumen Bukti Pemesanan Anda yang telah berhasil diunduh kepada Sekretariat pada saat Anda dan rombongan melakukan Registrasi Kebaktian Anak 2025.</strong></p>
+        <p>Berikut adalah detail booking Anda:</p>
+
+        <% if (data) { %>
+            <ul>
+                <li><strong>Distrik:</strong> <%= data.distrik_name %></li>
+                <li><strong>Sidang Jemaat:</strong> <%= data.sidang_jemaat_name %></li>
+                <li><strong>Gedung:</strong> <%= data.gedung %></li>
+                <li><strong>Blok:</strong> <%= data.block_name %></li>
+                <li><strong>Jumlah Kursi:</strong> <%= data.num_seats %></li>
+            </ul>
+            
+            <% const children = data.bookings.filter(booking => booking.category === 'Anak'); %>
+            <% if (children.length > 0) { %>
+                <h4>Daftar Anak-Anak:</h4>
+
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Nama</th>
+                            <th>Kategori</th>
+                            <th>Kelas</th>
+                            <th>Usia</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% children.forEach((booking, index) => { %>
+                            <tr>
+                                <td><%= index + 1 %></td>
+                                <td><%= booking.name %></td>
+                                <td><%= booking.category %></td>
+                                <td><%= booking.class ? booking.class : '-' %></td>
+                                <td><%= booking.age ? booking.age : '-' %></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            <% } %>
+
+            <% const guardians = data.bookings.filter(booking => booking.category !== 'Anak'); %>
+            <% if (guardians.length > 0) { %>
+                <h4>Daftar Pendamping:</h4>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Nama</th>
+                            <th>Kategori</th>
+                            <th>WhatsApp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% guardians.forEach((booking, index) => { %>
+                            <tr>
+                                <td><%= index + 1 %></td>
+                                <td><%= booking.name %></td>
+                                <td><%= booking.category %></td>
+                                <td><%= booking.whatsapp ? booking.whatsapp : '-' %></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            <% } %>
+
+            <% if (children.length === 0 && guardians.length === 0) { %>
+                <p>Tidak ada data anak atau pendamping yang terdaftar.</p>
+            <% } %>
+
+
+        <% } else { %>
+            <p>Data booking tidak ditemukan.</p>
+        <% } %>
+        
+        <br>
+        <a href="/">Kembali ke Beranda</a>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const container = document.querySelector(".success-container");
+            setTimeout(() => {
+                container.style.opacity = "1";
+                container.style.transform = "translateY(0)";
+            }, 200); // Delay sedikit agar lebih smooth
+        });
+    </script>
+    
+
+    <!-- Comming soon -->
+    <!-- <script>
+        window.onload = function() {
+            setTimeout(() => {
+                window.location.href = "/download-booking-pdf";
+            }, 1000); // Delay 1 detik agar user bisa melihat halaman success
+        };
+    </script> -->
+</body>
+</html>

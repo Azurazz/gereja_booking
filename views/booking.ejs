@@ -8,159 +8,407 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-image: url('/images/background-image.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            display: none;
+
+            opacity: 1;
+            transition: opacity 0.8s ease-out;
+        }
+
+        #loadingOverlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 8px solid transparent;
+            border-top: 8px solid #ff0000;
+            animation: spin 1s linear infinite, colorChange 3s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes colorChange {
+            0% { border-top-color: #ff0000; }
+            25% { border-top-color: #00ff00; }
+            50% { border-top-color: #0000ff; }
+            75% { border-top-color: #ff00ff; }
+            100% { border-top-color: #ff0000; }
+        }
+    </style>
 </head>
 
 <body>
     <%- include('partials/header') %>
 
-        <main class="container">
-            <h1 class="text-center">Pesan Tempat Duduk Anda di Gedung Hastina</h1>
-            <form action="/booking/book" method="POST">
+    <main class="container">
+        <h1 class="text-center">Pesan Tempat Duduk untuk Anak-Anak dan Pendamping Sidang Anda di Gedung Hastina</h1>
+
+        <div id="alertMessage" style="display: none; padding: 10px; margin-top: 10px;"></div>
+
+        <form id="bookingForm">
+            <input type="hidden" name="gedung" value="Hastina">
+
+            <section class="section">
+                <h2>Data Asal Sidang Jemaat</h2>
                 <div class="form-group">
-                    <label for="nama">Nama Lengkap:</label>
-                    <input type="text" id="nama" name="nama" required>
-                </div>
-                <div class="form-group">
-                    <label for="distrik">Distrik:</label>
-                    <select id="distrik" name="distrik" required>
+                    <label for="distrik">Distrik</label>
+                    <select id="distrik" name="distrik_id">
                         <option value="" selected disabled>Pilih Distrik!</option>
-                        <% distrikList.forEach(distrik=> { %>
+                        <% distrikList.forEach(distrik => { %>
                             <option value="<%= distrik.id %>">
                                 <%= distrik.nama_distrik %>
                             </option>
-                            <% }) %>
+                        <% }) %>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="asal_sidang">Asal Sidang Jemaat:</label>
-                    <select id="asal_sidang" name="asal_sidang" required>
+                    <label for="asal_sidang">Sidang Jemaat</label>
+                    <select id="asal_sidang" name="sidang_jemaat_id">
+                        <option value="" selected disabled>Pilih Sidang Jemaat!</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="no_wa">No. WhatsApp:</label>
-                    <input type="text" id="no_wa" name="no_wa" required pattern="([1-9][0-9]{7,14}|08[0-9]{8,11})"
-                        title="Nomor WhatsApp harus berupa 08XXXXXXXXXX atau 628XXXXXXXXX">
+            </section>
+
+            <section class="section">
+                <h2>Data Anak</h2>
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                    <div style="display: flex; flex-direction: column; flex-basis: 33%;">
+                        <label for="jumlah_anak">Jumlah Anak</label>
+                        <input type="number" id="jumlah_anak" name="jumlah_anak" min="1" max="100" value="1" required>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; flex-basis: 33%;">
+                        <label for="jumlah_pendamping">Jumlah Pendamping</label>
+                        <input type="number" id="jumlah_pendamping" name="jumlah_pendamping" readonly 
+                            style="background-color: #e0e0e0; color: #555;">
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; flex-basis: 33%;">
+                        <label for="num_seats">Total Kursi</label>
+                        <input type="number" id="num_seats" name="num_seats" readonly 
+                            style="background-color: #e0e0e0; color: #555;">
+                    </div>
                 </div>
+            
+                <div class="form-group" id="anak_container" style="display: flex; flex-direction: column; gap: 15px;">
+                    <!-- Will be generated by JavaScript -->
+                </div>
+            
+                <h2>Data Pendamping</h2>
+                <div class="form-group" id="pendamping_container" style="display: flex; flex-direction: column; gap: 15px;">
+                    <!-- Will be generated by JavaScript -->
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>Blok</h2>
                 <div class="form-group">
-                    <label for="blok_booking">Pilih Blok:</label>
+                    <label for="block_id">Pilih Blok:</label>
                     <div class="image-container">
-                        <img src="/images/greja_layuot-1.png" alt="Greja Layout" class="layout-image">
+                        <img src="/images/greja_layuot-1.png" alt="Gereja Layout" class="layout-image">
                     </div>
                     <div class="seat-selection">
-                        <% const blocks=['A', 'B' , 'C' , 'D' , 'E' , 'F' ]; %>
-                            <% blocks.forEach(blok=> { %>
-                                <div class="seat-block" data-blok="<%= blok %>"
-                                    data-max-seats="<%= seatData[blok].max %>">
-                                    <div class="seat-label">Blok <%= blok %>
-                                    </div>
-                                    <div class="seat-count">
-                                        <%= seatData[blok].booked %>/<%= seatData[blok].max %>
-                                    </div>
+                        <% seatData.forEach(block => { %>
+                            <div class="seat-block <%= (block.max - block.booked) <= 0 ? 'disabled' : '' %>"
+                                data-block="<%= block.id %>"
+                                data-remaining-seats="<%= block.max - block.booked %>"
+                                data-max-seats="<%= block.max %>">
+                                <div class="seat-label">Blok <%= block.block_name %>
                                 </div>
-                                <% }) %>
+                                <div class="seat-count">
+                                    <%= block.booked %>/<%= block.max %>
+                                </div>
+                            </div>
+                        <% }) %>
                     </div>
-                    <input type="hidden" id="blok_booking" name="blok_booking" required>
+                    <input type="hidden" id="block_id" name="block_id" required>
                 </div>
-                <div class="form-group">
-                    <label for="jumlah_seat">Jumlah Kursi:</label>
-                    <input type="number" id="jumlah_seat" name="jumlah_seat" min="1" max="1" value="1" readonly
-                        required>
-                </div>
-                <button type="submit" class="btn">Pesan Sekarang!</button>
-            </form>
-        </main>
+            </section>
+            
+            <button type="submit" class="btn">Pesan Sekarang!</button>
+        </form>
 
-        <%- include('partials/footer') %>
+        
+    </main>
 
-            <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    const seatBlocks = document.querySelectorAll('.seat-block');
-                    const blokBookingInput = document.getElementById('blok_booking');
-                    const jumlahSeatInput = document.getElementById('jumlah_seat');
+    <%- include('partials/footer') %>
 
-                    seatBlocks.forEach(block => {
-                        block.addEventListener('click', () => {
-                            seatBlocks.forEach(b => b.classList.remove('selected'));
-                            block.classList.add('selected');
-                            const selectedBlok = block.getAttribute('data-blok');
-                            blokBookingInput.value = selectedBlok;
+    <div id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>    
 
-                            // Set max value untuk input jumlah seat berdasarkan kapasitas blok
-                            const maxSeats = block.getAttribute('data-max-seats');
-                            const bookedSeats = block.querySelector('.seat-count').textContent.split('/')[0];
-                            const availableSeats = maxSeats - bookedSeats;
-                            jumlahSeatInput.setAttribute('max', availableSeats);
-                            jumlahSeatInput.setAttribute('placeholder', `Maksimal ${availableSeats} seat`);
+    <!-- Event Listener for anak_container and pendamping_container -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const jumlahAnakInput = document.getElementById("jumlah_anak");
+            const jumlahPendampingInput = document.getElementById("jumlah_pendamping");
+            const anakContainer = document.getElementById("anak_container");
+            const pendampingContainer = document.getElementById("pendamping_container");
+    
+            function generateChildFields(count) {
+                anakContainer.innerHTML = "";
+    
+                for (let i = 1; i <= count; i++) {
+                    const row = document.createElement("div");
+                    row.style.display = "flex";
+                    row.style.gap = "10px";
+                    row.style.width = "100%";
+                    row.style.alignItems = "center";
+    
+                    row.innerHTML = `
+                        <div style="flex-basis: 3%; text-align: center;">
+                            <span style="font-size: 14px; color: gray;">${i}</span>
+                        </div>
+    
+                        <div style="flex-basis: 70%;">
+                            <input type="text" name="child_name[]" placeholder="Nama Lengkap Anak" required>
+                        </div>
+    
+                        <div style="flex-basis: 12%;">
+                            <input type="number" name="child_class[]" min="1" placeholder="Kelas" required>
+                        </div>
+    
+                        <div style="flex-basis: 15%;">
+                            <input type="number" name="child_age[]" min="1" max="100" placeholder="Umur" required>
+                        </div>
+                    `;
+    
+                    anakContainer.appendChild(row);
+                }
+            }
+    
+            function generatePendampingFields(count) {
+                pendampingContainer.innerHTML = "";
+    
+                for (let i = 1; i <= count; i++) {
+                    const row = document.createElement("div");
+                    row.style.display = "flex";
+                    row.style.gap = "10px";
+                    row.style.width = "100%";
+                    row.style.alignItems = "center";
+    
+                    row.innerHTML = `
+                        <div style="flex-basis: 3%; text-align: center;">
+                            <span style="font-size: 14px; color: gray;">${i}</span>
+                        </div>
+    
+                        <div style="flex-basis: 69%;">
+                            <input type="text" name="pendamping_name[]" placeholder="Nama Lengkap Pendamping" required>
+                        </div>
+    
+                        <div style="flex-basis: 28%;">
+                            <input type="text" name="pendamping_whatsapp[]" placeholder="WhatsApp Pendamping" required>
+                        </div>
+                    `;
+    
+                    pendampingContainer.appendChild(row);
+                }
+            }
+    
+            function updateFields() {
+                let jumlahAnak = parseInt(jumlahAnakInput.value) || 1;
+                jumlahAnak = jumlahAnak > 100 ? 100 : jumlahAnak;
+
+                let jumlahPendamping = Math.ceil(jumlahAnak / 5);
+                jumlahPendampingInput.value = jumlahPendamping;
+
+                let totalKursi = jumlahAnak + jumlahPendamping;
+                document.getElementById("num_seats").value = totalKursi;
+
+                generateChildFields(jumlahAnak);
+                generatePendampingFields(jumlahPendamping);
+            }
+    
+            updateFields();
+    
+            jumlahAnakInput.addEventListener("input", updateFields);
+        });
+    </script>
+
+    <!-- WhatsApp Number Validation -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const pendampingContainer = document.getElementById("pendamping_container");
+
+            pendampingContainer.addEventListener('input', (event) => {
+                if (event.target.name === "pendamping_whatsapp[]") {
+                    let value = event.target.value.replace(/\D/g, '');
+                    event.target.value = value;
+
+                    const waRegex = /^([1-9][0-9]{7,14}|08[0-9]{8,11})$/;
+
+                    if (!waRegex.test(value)) {
+                        event.target.setCustomValidity('Nomor WhatsApp harus dalam format 08XXXXXXXXXX atau 628XXXXXXXXX.');
+                    } else {
+                        event.target.setCustomValidity('');
+                    }
+                }
+            });
+
+            document.querySelector('form').addEventListener('submit', (e) => {
+                const waInputs = document.querySelectorAll('input[name="pendamping_whatsapp[]"]');
+                for (const input of waInputs) {
+                    if (!input.checkValidity()) {
+                        e.preventDefault();
+                        alert(input.validationMessage);
+                        return;
+                    }
+                }
+            });
+        });
+    </script>
+
+    <!-- Event Listener for distrik_id and sidang_jemaat_id -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const distrikSelect = document.getElementById('distrik');
+            const asalSidangSelect = document.getElementById('asal_sidang');
+
+            distrikSelect.addEventListener('change', () => {
+                const distrikId = distrikSelect.value;
+                fetch(`/booking/asal-sidang/${distrikId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        asalSidangSelect.innerHTML = '';
+                        data.forEach(asalSidang => {
+                            const option = document.createElement('option');
+                            option.value = asalSidang.id;
+                            option.textContent = asalSidang.nama_sidang;
+                            asalSidangSelect.appendChild(option);
                         });
                     });
+            });
+        });
+    </script>
 
-                    // Validasi saat form disubmit
-                    document.querySelector('form').addEventListener('submit', (e) => {
-                        const selectedBlok = blokBookingInput.value;
-                        const jumlahSeat = parseInt(jumlahSeatInput.value);
-                        const maxSeats = parseInt(jumlahSeatInput.getAttribute('max'));
+    <!-- Event Listener for block_id and num_seats -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const seatBlocks = document.querySelectorAll('.seat-block');
+            const blokBookingInput = document.getElementById('block_id');
+            const jumlahSeatInput = document.getElementById('num_seats');
 
-                        if (!selectedBlok) {
-                            e.preventDefault();
-                            alert('Silakan pilih blok terlebih dahulu.');
-                        }
+            seatBlocks.forEach(block => {
+                block.addEventListener('click', () => {
+                    seatBlocks.forEach(b => b.classList.remove('selected'));
+                    block.classList.add('selected');
 
-                        if (jumlahSeat > maxSeats) {
-                            e.preventDefault();
-                            alert(`Jumlah seat melebihi kapasitas blok. Maksimal seat yang tersedia: ${maxSeats}`);
-                        }
-                    });
+                    const selectedBlok = block.getAttribute('data-block');
+                    blokBookingInput.value = selectedBlok;
+
+                    const availableSeats = block.getAttribute('data-remaining-seats');
+                    jumlahSeatInput.setAttribute('available', availableSeats);
                 });
-            </script>
+            });
 
-            <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    const distrikSelect = document.getElementById('distrik');
-                    const asalSidangSelect = document.getElementById('asal_sidang');
+            document.querySelector('form').addEventListener('submit', (e) => {
+                const selectedBlok = blokBookingInput.value;
+                const jumlahSeat = parseInt(jumlahSeatInput.value);
+                const availableSeats = parseInt(jumlahSeatInput.getAttribute('available'));
 
-                    distrikSelect.addEventListener('change', () => {
-                        const distrikId = distrikSelect.value;
-                        fetch(`/booking/asal-sidang/${distrikId}`)
-                            .then(res => res.json())
-                            .then(data => {
-                                asalSidangSelect.innerHTML = '';
-                                data.forEach(asalSidang => {
-                                    const option = document.createElement('option');
-                                    option.value = asalSidang.nama_sidang;
-                                    option.textContent = asalSidang.nama_sidang;
-                                    asalSidangSelect.appendChild(option);
-                                });
-                            });
-                    });
+                if (!selectedBlok) {
+                    e.preventDefault();
+                    alert('Silakan pilih blok terlebih dahulu.');
+                }
+
+                if (jumlahSeat > availableSeats) {
+                    e.preventDefault();
+                    alert(`Total kursi yang dipesan (${jumlahSeat} kursi) melebihi kapasitas blok. Maksimal kursi yang masih tersedia: ${availableSeats}.`);
+                }
+            });
+        });
+    </script>
+
+    <!-- Event Listener for bookingForm -->
+    <script>
+        document.getElementById("bookingForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+        
+            const formData = new FormData(this);
+            const data = {};
+
+            formData.forEach((value, key) => {
+                if (key.includes("[]")) {
+                    key = key.replace("[]", "");
+                    if (!data[key]) {
+                        data[key] = [];
+                    }
+                    data[key].push(value);
+                } else {
+                    data[key] = value;
+                }
+            });
+
+            const loadingOverlay = document.getElementById("loadingOverlay");
+            loadingOverlay.style.display = "flex";
+        
+            try {
+                const response = await fetch('/booking/book', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
                 });
-            </script>
+        
+                const result = await response.json();
+                const alertBox = document.getElementById("alertMessage");
+        
+                if (result.success) {
+                    alertBox.style.backgroundColor = "green";
+                    alertBox.style.color = "white";
+                    alertBox.innerText = result.message;
 
-            <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    const noWaInput = document.getElementById('no_wa');
+                    alertBox.scrollIntoView({ behavior: "smooth", block: "center" });
 
-                    noWaInput.addEventListener('input', () => {
-                        let value = noWaInput.value.replace(/\D/g, '');
-                        noWaInput.value = value;
+                    setTimeout(() => {
+                        loadingOverlay.classList.add("hidden");
+                    }, 1000);
 
-                        const waRegex = /^([1-9][0-9]{7,14}|08[0-9]{8,11})$/;
+                    setTimeout(() => {
+                        window.location.href = `booking/success?data=${encodeURIComponent(JSON.stringify(result.data))}`;
+                    }, 1800);
+                } else {
+                    alertBox.style.backgroundColor = "red";
+                    alertBox.style.color = "white";
+                    alertBox.innerText = result.message;
+                    loadingOverlay.style.display = "none";
 
-                        if (!waRegex.test(value)) {
-                            noWaInput.setCustomValidity('Nomor WhatsApp harus dalam format 08XXXXXXXXXX atau 628XXXXXXXXX.');
-                        } else {
-                            noWaInput.setCustomValidity('');
-                        }
-                    });
-
-                    document.querySelector('form').addEventListener('submit', (e) => {
-                        if (!noWaInput.checkValidity()) {
-                            e.preventDefault();
-                            alert(noWaInput.validationMessage);
-                        }
-                    });
-                });
-            </script>
-
+                    alertBox.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+        
+                alertBox.style.display = "block";
+            } catch (error) {
+                console.error("Error:", error);
+                loadingOverlay.style.display = "none";
+            }
+        });
+    </script>
 </body>
 
 </html>

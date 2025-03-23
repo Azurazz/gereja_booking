@@ -210,6 +210,13 @@ form {
     background-color: #e3f2fd;
 }
 
+.seat-block.disabled {
+    background-color: #ccc;
+    color: #888;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
 .seat-label {
     font-size: 18px;
     font-weight: bold;
