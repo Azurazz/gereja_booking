@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Booking - Gedung Hastina</title>
+    
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -65,10 +66,10 @@
 </head>
 
 <body>
-    <%- include('partials/header') %>
+    <%- include('../partials/header') %>
 
     <main class="container">
-        <h1 class="text-center">Pesan Tempat Duduk untuk Anak-Anak dan Pendamping Sidang Anda di Gedung Hastina</h1>
+        <h2 class="text-center">Pesan Tempat Duduk untuk Anak-Anak dan Pendamping Sidang Anda di Gedung Hastina</h2>
 
         <div id="alertMessage" style="display: none; padding: 10px; margin-top: 10px;"></div>
 
@@ -89,8 +90,8 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="asal_sidang">Sidang Jemaat</label>
-                    <select id="asal_sidang" name="sidang_jemaat_id">
+                    <label for="sidang_jemaat_id">Sidang Jemaat</label>
+                    <select id="sidang_jemaat_id" name="sidang_jemaat_id">
                         <option value="" selected disabled>Pilih Sidang Jemaat!</option>
                     </select>
                 </div>
@@ -158,11 +159,11 @@
         
     </main>
 
-    <%- include('partials/footer') %>
+    <%- include('../partials/footer') %>
 
     <div id="loadingOverlay">
         <div class="loading-spinner"></div>
-    </div>    
+    </div>
 
     <!-- Event Listener for anak_container and pendamping_container -->
     <script>
@@ -289,7 +290,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const distrikSelect = document.getElementById('distrik');
-            const asalSidangSelect = document.getElementById('asal_sidang');
+            const asalSidangSelect = document.getElementById('sidang_jemaat_id');
 
             distrikSelect.addEventListener('change', () => {
                 const distrikId = distrikSelect.value;
@@ -314,6 +315,17 @@
             const seatBlocks = document.querySelectorAll('.seat-block');
             const blokBookingInput = document.getElementById('block_id');
             const jumlahSeatInput = document.getElementById('num_seats');
+
+            if (seatBlocks.length === 1) {
+                const singleBlock = seatBlocks[0];
+                singleBlock.classList.add('selected');
+
+                const selectedBlok = singleBlock.getAttribute('data-block');
+                blokBookingInput.value = selectedBlok;
+
+                const availableSeats = singleBlock.getAttribute('data-remaining-seats');
+                jumlahSeatInput.setAttribute('available', availableSeats);
+            }
 
             seatBlocks.forEach(block => {
                 block.addEventListener('click', () => {
@@ -391,7 +403,7 @@
                     }, 1000);
 
                     setTimeout(() => {
-                        window.location.href = `booking/success?data=${encodeURIComponent(JSON.stringify(result.data))}`;
+                        window.location.href = `success?data=${encodeURIComponent(JSON.stringify(result.data))}`;
                     }, 1800);
                 } else {
                     alertBox.style.backgroundColor = "red";

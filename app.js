@@ -2,10 +2,9 @@ const express = require('express');
 const session = require('express-session');
 const bodyParser = require('body-parser');
 const path = require('path');
-const homeRoutes = require('./routes/home'); // Impor homeRoutes
+const homeRoutes = require('./routes/home');
 const bookingRoutes = require('./routes/booking');
 const adminRoutes = require('./routes/admin');
-const bookingGedung1Routes = require('./routes/booking_gedung_1');
 
 const app = express();
 
@@ -23,10 +22,9 @@ app.use(session({
     saveUninitialized: true
 }));
 
-app.use('/', homeRoutes); // Gunakan homeRoutes
-app.use('/booking', bookingRoutes); // Gedung Hastina
+app.use('/', homeRoutes);
+app.use('/booking', bookingRoutes);
 app.use('/admin', adminRoutes);
-app.use('/booking_gedung_1', bookingGedung1Routes); // Gedung Yudistira
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

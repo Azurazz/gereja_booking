@@ -31,8 +31,6 @@
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
             width: 65%;
             margin: 20px auto;
-            /* overflow-y: scroll; */
-            /* max-height: 80vh; */
         }
 
         .success-container .logo {
@@ -71,7 +69,7 @@
         <p>Terima kasih! Data yang Anda masukkan telah berhasil diproses.</p>
 
         <p class="download-info">
-            Dokumen Bukti Pemesanan Anda akan didownload secara otomatis. Jika belum, silakan klik tombol di bawah ini:
+            Dokumen Bukti Pemesanan Anda akan terunduh secara otomatis. Jika belum, silakan klik tombol di bawah ini:
         </p>
         <a href="#" class="download-btn" onclick="alert('Coming Soon!')">Download Bukti Pemesanan (PDF)</a>
 
@@ -143,8 +141,6 @@
             <% if (children.length === 0 && guardians.length === 0) { %>
                 <p>Tidak ada data anak atau pendamping yang terdaftar.</p>
             <% } %>
-
-
         <% } else { %>
             <p>Data booking tidak ditemukan.</p>
         <% } %>
@@ -159,10 +155,9 @@
             setTimeout(() => {
                 container.style.opacity = "1";
                 container.style.transform = "translateY(0)";
-            }, 200); // Delay sedikit agar lebih smooth
+            }, 200);
         });
     </script>
-    
 
     <!-- Comming soon -->
     <!-- <script>

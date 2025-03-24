@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking - Gedung Yudistira</title>
+
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-image: url('/images/background-image.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            display: none;
+
+            opacity: 1;
+            transition: opacity 0.8s ease-out;
+        }
+
+        #loadingOverlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 8px solid transparent;
+            border-top: 8px solid #ff0000;
+            animation: spin 1s linear infinite, colorChange 3s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes colorChange {
+            0% { border-top-color: #ff0000; }
+            25% { border-top-color: #00ff00; }
+            50% { border-top-color: #0000ff; }
+            75% { border-top-color: #ff00ff; }
+            100% { border-top-color: #ff0000; }
+        }
+    </style>
+</head>
+
+<body>
+    <%- include('../partials/header') %>
+
+    <main class="container">
+        <h2 class="text-center">Pesan Tempat Duduk Anda di Gedung Yudistira</h2>
+
+        <div id="alertMessage" style="display: none; padding: 10px; margin-top: 10px;"></div>
+
+        <form id="bookingForm">
+            <input type="hidden" name="gedung" value="Yudistira">
+
+            <div class="form-group">
+                <label for="name">Nama Lengkap</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="distrik">Distrik</label>
+                <select id="distrik" name="distrik_id">
+                    <option value="" selected disabled>Pilih Distrik!</option>
+                    <% distrikList.forEach(distrik => { %>
+                        <option value="<%= distrik.id %>">
+                            <%= distrik.nama_distrik %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="sidang_jemaat_id">Sidang Jemaat</label>
+                <select id="sidang_jemaat_id" name="sidang_jemaat_id">
+                    <option value="" selected disabled>Pilih Sidang Jemaat!</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="category">Kategori</label>
+                <select id="category" name="category">
+                    <option value="" selected disabled>Pilih Kategori!</option>
+                    <option value="Orang Tua Peserta">Orang Tua Peserta</option>
+                    <option value="Umum">Umum</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="whatsapp">No. WhatsApp</label>
+                <input type="text" id="whatsapp" name="whatsapp" required pattern="([1-9][0-9]{7,14}|08[0-9]{8,11})"
+                    title="Nomor WhatsApp harus berupa 08XXXXXXXXXX atau 628XXXXXXXXX">
+            </div>
+            <div class="form-group">
+                <label for="num_seats">Jumlah Kursi</label>
+                <input type="number" id="num_seats" name="num_seats" min="1" max="1" value="1" readonly
+                    style="background-color: #e0e0e0; color: #555;">
+            </div>
+            <div class="form-group">
+                <label for="block_id">Blok</label>
+                <div class="seat-selection">
+                    <% seatData.forEach(block => { %>
+                        <div class="seat-block <%= (block.max - block.booked) <= 0 ? 'disabled' : '' %>"
+                            data-block="<%= block.id %>"
+                            data-remaining-seats="<%= block.max - block.booked %>"
+                            data-max-seats="<%= block.max %>">
+                            <div class="seat-label">Blok <%= block.block_name %>
+                            </div>
+                            <div class="seat-count">
+                                <%= block.booked %>/<%= block.max %>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+                <input type="hidden" id="block_id" name="block_id" required>
+            </div>
+
+            <button type="submit" class="btn">Pesan Sekarang!</button>
+        </form>
+    </main>
+
+    <%- include('../partials/footer') %>
+
+    <div id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- WhatsApp Number Validation -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const noWaInput = document.getElementById('whatsapp');
+
+            noWaInput.addEventListener('input', () => {
+                let value = noWaInput.value.replace(/\D/g, '');
+                noWaInput.value = value;
+
+                const waRegex = /^([1-9][0-9]{7,14}|08[0-9]{8,11})$/;
+
+                if (!waRegex.test(value)) {
+                    noWaInput.setCustomValidity('Nomor WhatsApp harus dalam format 08XXXXXXXXXX atau 628XXXXXXXXX.');
+                } else {
+                    noWaInput.setCustomValidity('');
+                }
+            });
+
+            document.querySelector('form').addEventListener('submit', (e) => {
+                if (!noWaInput.checkValidity()) {
+                    e.preventDefault();
+                    alert(noWaInput.validationMessage);
+                }
+            });
+        });
+    </script>
+
+    <!-- Event Listener for distrik_id and sidang_jemaat_id -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const distrikSelect = document.getElementById('distrik');
+            const asalSidangSelect = document.getElementById('sidang_jemaat_id');
+
+            distrikSelect.addEventListener('change', () => {
+                const distrikId = distrikSelect.value;
+                fetch(`/booking/asal-sidang/${distrikId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        asalSidangSelect.innerHTML = '';
+                        data.forEach(asalSidang => {
+                            const option = document.createElement('option');
+                            option.value = asalSidang.id;
+                            option.textContent = asalSidang.nama_sidang;
+                            asalSidangSelect.appendChild(option);
+                        });
+                    });
+            });
+        });
+    </script>
+
+    <!-- Event Listener for block_id and num_seats -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const seatBlocks = document.querySelectorAll('.seat-block');
+            const blokBookingInput = document.getElementById('block_id');
+            const jumlahSeatInput = document.getElementById('num_seats');
+
+            if (seatBlocks.length === 1) {
+                const singleBlock = seatBlocks[0];
+                singleBlock.classList.add('selected');
+
+                const selectedBlok = singleBlock.getAttribute('data-block');
+                blokBookingInput.value = selectedBlok;
+
+                const availableSeats = singleBlock.getAttribute('data-remaining-seats');
+                jumlahSeatInput.setAttribute('available', availableSeats);
+            }
+
+            seatBlocks.forEach(block => {
+                block.addEventListener('click', () => {
+                    seatBlocks.forEach(b => b.classList.remove('selected'));
+                    block.classList.add('selected');
+
+                    const selectedBlok = block.getAttribute('data-block');
+                    blokBookingInput.value = selectedBlok;
+
+                    const availableSeats = block.getAttribute('data-remaining-seats');
+                    jumlahSeatInput.setAttribute('available', availableSeats);
+                });
+            });
+
+            document.querySelector('form').addEventListener('submit', (e) => {
+                const selectedBlok = blokBookingInput.value;
+                const jumlahSeat = parseInt(jumlahSeatInput.value);
+                const availableSeats = parseInt(jumlahSeatInput.getAttribute('available'));
+
+                if (!selectedBlok) {
+                    e.preventDefault();
+                    alert('Silakan pilih blok terlebih dahulu.');
+                }
+
+                if (jumlahSeat > availableSeats) {
+                    e.preventDefault();
+                    alert(`Total kursi yang dipesan (${jumlahSeat} kursi) melebihi kapasitas blok. Maksimal kursi yang masih tersedia: ${availableSeats}.`);
+                }
+            });
+        });
+    </script>
+
+    <!-- Event Listener for bookingForm -->
+    <script>
+        document.getElementById("bookingForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+        
+            const formData = new FormData(this);
+            const data = {};
+
+            formData.forEach((value, key) => {
+                if (key.includes("[]")) {
+                    key = key.replace("[]", "");
+                    if (!data[key]) {
+                        data[key] = [];
+                    }
+                    data[key].push(value);
+                } else {
+                    data[key] = value;
+                }
+            });
+
+            const loadingOverlay = document.getElementById("loadingOverlay");
+            loadingOverlay.style.display = "flex";
+        
+            try {
+                const response = await fetch('/booking/book', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+        
+                const result = await response.json();
+                const alertBox = document.getElementById("alertMessage");
+        
+                if (result.success) {
+                    alertBox.style.backgroundColor = "green";
+                    alertBox.style.color = "white";
+                    alertBox.innerText = result.message;
+
+                    alertBox.scrollIntoView({ behavior: "smooth", block: "center" });
+
+                    setTimeout(() => {
+                        loadingOverlay.classList.add("hidden");
+                    }, 1000);
+
+                    setTimeout(() => {
+                        window.location.href = `success?data=${encodeURIComponent(JSON.stringify(result.data))}`;
+                    }, 1800);
+                } else {
+                    alertBox.style.backgroundColor = "red";
+                    alertBox.style.color = "white";
+                    alertBox.innerText = result.message;
+                    loadingOverlay.style.display = "none";
+
+                    alertBox.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+        
+                alertBox.style.display = "block";
+            } catch (error) {
+                console.error("Error:", error);
+                loadingOverlay.style.display = "none";
+            }
+        });
+    </script>
+</body>
+
+</html>
