@@ -16,114 +16,122 @@
 
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+
+    <style>
+        body {
+            background-image: url('/images/background-image.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+    </style>
 </head>
 
 <body>
     <%- include('partials/header') %>
+
     <main class="dashboard-container">
         <h2>Admin Dashboard</h2>
 
         <!-- Chart Section -->
-        <div class="chart-grid">
-            <% const blocks=['A', 'B' , 'C' , 'D' , 'E' , 'F' ,'Yudistira' ]; %>
-            <% blocks.forEach(blok=> { %>
+        <div class="chart-grid" style="padding-bottom: 30px;">
+            <% seatData.forEach(block => { %>
             <div class="chart-card">
-                <h3>Blok <%= blok %></h3>
+                <h3>Blok <%= block.block_name %></h3>
                 <div class="chart-container">
-                    <canvas id="chart<%= blok %>"></canvas>
+                    <canvas id="chart<%= block.block_name %>"></canvas>
                 </div>
                 <div class="chart-info">
-                    <p>Terisi: <%= ((seatData[blok].booked / seatData[blok].max) * 100).toFixed(2) %>%</p>
-                    <p>Sisa: <%= seatData[blok].max - seatData[blok].booked %> seat</p>
+                    <p>Kuota: <%= block.max %> seat</p>
+                    <p>Terisi: <%= block.booked %> seat (<%= isNaN(((block.booked / block.max) * 100).toFixed(2)) ? 0 : ((block.booked / block.max) * 100).toFixed(2) %>%)</p>
+                    <p>Tersisa: <%= block.max - block.booked %> seat</p>
                 </div>
             </div>
             <% }) %>
         </div>
 
+        <h2>Data Pemesan</h2>
+
         <!-- Table Section -->
         <div class="table-responsive">
-            <div class="filter-container">
-                <label for="filterDistrik">Filter Distrik:</label>
-                <% let distrikSet = new Set(bookings.map(b => b.nama_distrik)); %>
-                <% let sortedDistrik = Array.from(distrikSet).sort(); %>
-                <select id="filterDistrik">
-                    <option value="">Semua</option>
-                    <% sortedDistrik.forEach(distrik => { %>
-                        <option value="<%= distrik %>"><%= distrik %></option>
-                    <% }) %>
-                </select>
+            <div class="container" style="width: 100%; padding: 0;">
+                <div class="row" style="display: flex; width: 100%; gap: 10px;">
+                    <div class="col">
+                        <label for="filterDistrik" class="form-label">Filter Distrik:</label>
+                        <select id="filterDistrik" class="select2 form-control">
+                            <option value="">Semua</option>
+                            <% distrikList.forEach(distrik => { %>
+                                <option value="<%= distrik.id %>"><%= distrik.nama_distrik %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+            
+                    <div class="col">
+                        <label for="filterJemaat" class="form-label">Filter Sidang Jemaat:</label>
+                        <select id="filterJemaat" class="select2 form-control" disabled>
+                            <option value="">Semua</option>
+                        </select>
+                    </div>
+            
+                    <div class="col">
+                        <label for="filterBlok" class="form-label">Filter Blok:</label>
+                        <select id="filterBlok" class="select2 form-control">
+                            <option value="">Semua</option>
+                            <% seatData.forEach(block => { %>
+                                <option value="<%= block.id %>"><%= block.block_name %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+                </div>
             </div>
-            <button id="export-to-excel">Export ke Excel</button>         
 
-            <table id="bookingTable">
+            <div class="container" style="width: 100%; padding-left: 0; padding-right: 0;">
+                <button id="export-to-excel" type="submit" class="btn btn-success" style="padding: 8px 12px;">
+                    Export <i class="fas fa-file-excel"></i>
+                </button>
+            </div>
+
+            <table id="bookingTable" style="width: 100%;">
                 <thead>
                     <tr>
                         <th>Booking ID</th>
                         <th>Nama</th>
                         <th>Distrik</th>
-                        <th>Asal Sidang</th>
-                        <th>Blok Booking</th>
-                        <th>No WA</th>
-                        <th>Jumlah Seat</th>
+                        <th>Sidang Jemaat</th>
+                        <th>Blok</th>
+                        <th>Kelas</th>
+                        <th>Umur</th>
+                        <th>No. WhatsApp</th>
+                        <th>Kategori</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <% if (bookings && bookings.length> 0) { %>
-                        <% bookings.sort((a, b) => b.id - a.id).forEach(booking => { %>
-                        <tr data-id="<%= booking.id %>">
-                            <td>
-                                <%= booking.id %>
-                            </td>
-                            <td>
-                                <%= booking.nama %>
-                            </td>
-                            <td>
-                                <%= booking.nama_distrik %>
-                            </td>
-                            <td>
-                                <%= booking.asal_sidang %>
-                            </td>
-                            <td>
-                                <%= booking.blok_booking %>
-                            </td>
-                            <td>
-                                <%= booking.no_wa %>
-                            </td>
-                            <td>
-                                <%= booking.jumlah_seat %>
-                            </td>
-                            <td>
-                                <button class="btn-edit" data-id="<%= booking.id %>">Edit</button>
-                                <button class="btn-delete" data-id="<%= booking.id %>">Hapus</button>
-                            </td>
-                        </tr>
-                        <% }) %>
-                    <% } else { %>
-                        <tr>
-                            <td colspan="6" style="text-align: center;">Tidak ada data bookings.</td>
-                        </tr>
-                    <% } %>
                 </tbody>
             </table>
         </div>
     </main>
 
-    <!-- Modal untuk Edit Data -->
-    <div id="editModal" class="modal">
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal" style="display: none;">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <h2>Edit Booking</h2>
+            <h2>Edit Booking Data</h2>
             <form id="editForm">
                 <input type="hidden" id="editId" name="id">
+
                 <div class="form-group">
-                    <label for="editNama">Nama:</label>
-                    <input type="text" id="editNama" name="nama">
+                    <label for="editNama">Nama Lengkap</label>
+                    <input type="text" id="editNama" name="name">
                 </div>
                 <div class="form-group">
-                    <label for="editDistrik">Distrik:</label>
-                    <select id="editDistrik" name="distrik">
-                        <% distrikList.forEach(distrik=> { %>
+                    <label for="editDistrik">Distrik</label>
+                    <select id="editDistrik" name="distrik_id">
+                        <% distrikList.forEach(distrik => { %>
                             <option value="<%= distrik.id %>">
                                 <%= distrik.nama_distrik %>
                             </option>
@@ -131,22 +139,42 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="editAsalSidang">Asal Sidang:</label>
-                    <select id="asal_sidang" name="asal_sidang" required>
+                    <label for="editAsalSidang">Sidang Jemaat</label>
+                    <select id="editAsalSidang" name="sidang_jemaat_id" required>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="editBlokBooking">Blok Booking:</label>
-                    <input type="text" id="editBlokBooking" name="blok_booking">
+                    <label for="editBlokBooking">Blok</label>
+                    <select id="editBlokBooking" name="block_id">
+                        <% seatData.forEach(block => { %>
+                            <option value="<%= block.id %>">
+                                <%= block.block_name %>
+                            </option>
+                        <% }) %>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label for="editNoWa">No WA:</label>
-                    <input type="text" id="editNoWa" name="no_wa">
+                    <label for="editKategori">Kategori</label>
+                    <select id="editKategori" name="category">
+                        <option value="Anak">Anak</option>
+                        <option value="Pendamping">Pendamping</option>
+                        <option value="Orang Tua Peserta">Orang Tua Peserta</option>
+                        <option value="Umum">Umum</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label for="editJumlahSeat">Jumlah Seat:</label>
-                    <input type="number" id="editJumlahSeat" name="jumlah_seat" min="1">
+                    <label for="editKelas">Kelas</label>
+                    <input type="number" id="editKelas" name="class">
                 </div>
+                <div class="form-group">
+                    <label for="editUmur">Umur</label>
+                    <input type="number" id="editUmur" name="age">
+                </div>
+                <div class="form-group">
+                    <label for="editNoWa">WhatsApp</label>
+                    <input type="text" id="editNoWa" name="whatsapp">
+                </div>
+
                 <button type="submit" class="btn">Simpan Perubahan</button>
             </form>
         </div>
@@ -154,79 +182,58 @@
 
     <%- include('partials/footer') %>
 
+    <!--/**
+     * Generates a pie chart for each block based on the seat data.
+     * The chart is generated using the Chart.js library.
+     * The chart is responsive and has a legend at the bottom.
+     * The tooltip shows the label and the raw value in the format "Terisi: X seat" or "Sisa: X seat".
+     */-->
     <script>
-        const seatData = {
-            A: {
-                max: <%= seatData.A.max %>,
-                booked: <%= seatData.A.booked %>
-            },
-            B: {
-                max: <%= seatData.B.max %>,
-                booked: <%= seatData.B.booked %>
-            },
-            C: {
-                max: <%= seatData.C.max %>,
-                booked: <%= seatData.C.booked %>
-            },
-            D: {
-                max: <%= seatData.D.max %>,
-                booked: <%= seatData.D.booked %>
-            },
-            E: {
-                max: <%= seatData.E.max %>,
-                booked: <%= seatData.E.booked %>
-            },
-            F: {
-                max: <%= seatData.F.max %>,
-                booked: <%= seatData.F.booked %>
-            },
-            Yudistira: {
-                max: <%= seatData.Yudistira.max %>,
-                booked: <%= seatData.Yudistira.booked %>
-            }
-        };
+        document.addEventListener("DOMContentLoaded", function() {
+            const seatData = JSON.parse('<%- JSON.stringify(seatData) %>');
 
-        Object.keys(seatData).forEach(blok => {
-            const ctx = document.getElementById(`chart${blok}`).getContext('2d');
-            const data = {
-                labels: ['Terisi', 'Sisa'],
-                datasets: [{
-                    data: [seatData[blok].booked, seatData[blok].max - seatData[blok].booked],
-                    backgroundColor: ['#36A2EB', '#FFCE56'],
-                    hoverOffset: 4
-                }]
-            };
+            Object.keys(seatData).forEach(key => {
+                const block = seatData[key];
+                const canvasElement = document.getElementById(`chart${block.block_name}`);
+                
+                if (!canvasElement) {
+                    console.warn(`Canvas not found for block: ${block.block_name}`);
+                    return;
+                }
 
-            new Chart(ctx, {
-                type: 'pie',
-                data: data,
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    let label = context.label || '';
-                                    if (label) {
-                                        label += ': ';
+                const ctx = canvasElement.getContext('2d');
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Terisi', 'Sisa'],
+                        datasets: [{
+                            data: [block.booked, block.max - block.booked],
+                            backgroundColor: ['#36A2EB', '#FFCE56'],
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return `${context.label}: ${context.raw} seat`;
                                     }
-                                    label += context.raw + ' seat';
-                                    return label;
                                 }
                             }
                         }
                     }
-                }
+                });
             });
         });
     </script>
 
+    <!-- Event Listener for distrik and asalSidang on the Edit Modal -->
     <script>
         const distrikSelect = document.getElementById('editDistrik');
-        const asalSidangSelect = document.getElementById('asal_sidang');
+        const asalSidangSelect = document.getElementById('editAsalSidang');
 
         distrikSelect.addEventListener('change', () => {
             const distrikId = distrikSelect.value;
@@ -237,7 +244,7 @@
                     asalSidangSelect.innerHTML = '';
                     data.forEach(asalSidang => {
                         const option = document.createElement('option');
-                        option.value = asalSidang.nama_sidang;
+                        option.value = asalSidang.sidang_id;
                         option.textContent = asalSidang.nama_sidang;
                         asalSidangSelect.appendChild(option);
                     });
@@ -251,16 +258,21 @@
     <!-- DataTables JS -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+
     <script>
         $(document).ready(function () {
             let table = $('#bookingTable').DataTable({
+                "processing": true,
+                "serverSide": true,
                 "paging": true,
                 "searching": true,
                 "ordering": true,
                 "info": true,
                 "responsive": true,
                 "pageLength": 10,
-                "lengthMenu": [10, 25, 50],
+                "scrollX": true,
                 "language": {
                     "search": "Cari:",
                     "lengthMenu": "Tampilkan _MENU_ entri",
@@ -272,21 +284,213 @@
                         "previous": "Sebelumnya"
                     }
                 },
-                "order": [[0, "desc"]]
+                "order": [[0, "desc"]],
+                "ajax": {
+                    "url": "/admin/booking-datatable",
+                    "type": "GET",
+                    "data": function (d) {
+                        d.distrik = $('#filterDistrik').val();
+                        d.sidang_jemaat = $('#filterJemaat').val();
+                        d.block = $('#filterBlok').val();
+                    }
+                },
+                "columns": [
+                    { 
+                        "data": "id", 
+                        "visible": true
+                    },
+                    {
+                        "data": "name", 
+                        "visible": true 
+                    },
+                    {
+                        "data": "nama_distrik", 
+                        "visible": true 
+                    },
+                    {
+                        "data": "nama_sidang", 
+                        "visible": true 
+                    },
+                    {
+                        "data": "block_name", 
+                        "visible": true 
+                    },
+                    {
+                        "data": "class", 
+                        "visible": true 
+                    },
+                    {
+                        "data": "age", 
+                        "visible": true 
+                    },
+                    {
+                        "data": "whatsapp", 
+                        "visible": false 
+                    },
+                    {
+                        "data": "category", 
+                        "visible": true 
+                    },
+                    { 
+                        "data": "id",
+                        "render": function (data, type, row) {
+                            return `
+                                <button class="btn-edit" data-id="${data}">Edit</button>
+                                <button class="btn-delete" data-id="${data}">Hapus</button>
+                            `;
+                        }
+                    }
+                ],
+            });
+
+            $('#filterDistrik').select2({
+                placeholder: "Pilih Distrik",
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#filterJemaat').select2({
+                placeholder: "Pilih Sidang Jemaat",
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#filterBlok').select2({
+                placeholder: "Pilih Blok",
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#filterDistrik, #filterJemaat, #filterBlok').on('change', function () {
+                table.ajax.reload();
             });
 
             $('#filterDistrik').on('change', function () {
-                let selectedValue = $(this).val();
-                table.column(1).search(selectedValue).draw();
+                let distrikId = $(this).val();
+                let jemaatSelect = $('#filterJemaat');
+
+                jemaatSelect.prop('disabled', true).html('<option value="">Semua</option>');
+
+                if (distrikId) {
+                    fetch(`/booking/asal-sidang/${distrikId}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            data.forEach(jemaat => {
+                                jemaatSelect.append(new Option(jemaat.nama_sidang, jemaat.id));
+                            });
+                            jemaatSelect.prop('disabled', false);
+                        });
+                }
             });
+
+            $('#bookingTable').on('click', '.btn-edit', function () {
+                let bookingId = $(this).data('id');
+
+                $.ajax({
+                    url: `/booking/${bookingId}`,
+                    type: 'GET',
+                    success: function (data) {
+                        $('#editId').val(data.id);
+                        $('#editNama').val(data.name);
+                        $('#editDistrik').val(data.distrik_id);
+                        $('#editBlokBooking').val(data.block_id);
+                        $('#editKategori').val(data.category);
+                        $('#editKelas').val(data.class);
+                        $('#editUmur').val(data.age);
+                        $('#editNoWa').val(data.whatsapp);
+
+                        $('#editAsalSidang').empty().append('<option value="">Pilih Sidang</option>');
+
+                        $.ajax({
+                            url: `/booking/asal-sidang/${data.distrik_id}`,
+                            type: 'GET',
+                            success: function (sidangList) {
+                                sidangList.forEach(sidang => {
+                                    let selected = (sidang.id == data.sidang_jemaat_id) ? 'selected' : '';
+                                    $('#editAsalSidang').append(`<option value="${sidang.id}" ${selected}>${sidang.nama_sidang}</option>`);
+                                });
+                            },
+                            error: function (err) {
+                                console.error('Gagal mengambil data sidang:', err);
+                            }
+                        });
+
+                        $('#editModal').css('display', 'block');
+                    },
+                    error: function (err) {
+                        console.error('Gagal mengambil data:', err);
+                    }
+                });
+            });
+
+            $('.close').on('click', function () {
+                $('#editModal').css('display', 'none');
+            });
+
+            $(window).on('click', function (e) {
+                if ($(e.target).is('#editModal')) {
+                    $('#editModal').css('display', 'none');
+                }
+            });
+
+            $('#editForm').on('submit', function (e) {
+                e.preventDefault();
+
+                let formData = {
+                    id: $('#editId').val(),
+                    name: $('#editNama').val(),
+                    distrik_id: $('#editDistrik').val(),
+                    sidang_jemaat_id: $('#editAsalSidang').val(),
+                    block_id: $('#editBlokBooking').val(),
+                    category: $('#editKategori').val(),
+                    class: $('#editKelas').val(),
+                    age: $('#editUmur').val(),
+                    whatsapp: $('#editNoWa').val(),
+                };
+
+                $.ajax({
+                    url: `/admin/update-booking/${formData.id}`,
+                    type: 'POST',
+                    data: formData,
+                    success: function (response) {
+                        alert('Data berhasil diperbarui!');
+                        $('#editModal').css('display', 'none');
+                        table.ajax.reload(null, false);
+                    },
+                    error: function (err) {
+                        console.error('Gagal menyimpan perubahan:', err);
+                        alert('Terjadi kesalahan, coba lagi!');
+                    }
+                });
+            });
+
+            $('#bookingTable').on('click', '.btn-delete', function () {
+                let bookingId = $(this).data('id');
+
+                if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+                    $.ajax({
+                        url: `/admin/delete-booking/${bookingId}`,
+                        type: 'DELETE',
+                        success: function (response) {
+                            alert('Data berhasil dihapus!');
+                            table.ajax.reload(null, false);
+                        },
+                        error: function (err) {
+                            console.error('Gagal menghapus data:', err);
+                            alert('Terjadi kesalahan, coba lagi!');
+                        }
+                    });
+                }
+            });
+
         });
     </script>
 
+    <!--/**
+    * Redirects to the export-excel route, which will force the
+    * browser to download the bookings data as an Excel file.
+    */-->
     <script>
-        /**
-         * Redirects to the export-excel route, which will force the
-         * browser to download the bookings data as an Excel file.
-         */
         const exportToExcel = () => {
           window.location.href = '/admin/export-excel';
         };

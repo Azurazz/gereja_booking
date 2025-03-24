@@ -1,9 +1,12 @@
 const express = require('express');
-const router = express.Router();
+const util = require('util');
 const db = require('../models/db');
 const ExcelJS = require('exceljs');
 
-const SEAT_LIMITS = require('../config/seatLimits');
+const router = express.Router();
+const query = util.promisify(db.query).bind(db);
+
+// const SEAT_LIMITS = require('../config/seatLimits');
 
 /**
  * Checks if the user is authenticated.
@@ -28,7 +31,7 @@ function isAuthenticated(req, res, next) {
     }
 }
 
-router.use(express.json());
+// router.use(express.json());
 
 /**
  * Renders the admin dashboard page.
@@ -41,31 +44,36 @@ router.use(express.json());
  * @returns {void}
  */
 router.get('/', isAuthenticated, (req, res) => {
-    const bookingQuery = 'SELECT blok_booking, SUM(jumlah_seat) AS total_seat FROM bookings GROUP BY blok_booking';
+    const blockQuery = `
+        SELECT
+            blocks.id,
+            blocks.block_name,
+            blocks.gedung,
+            blocks.seat_limit AS max,
+            COALESCE(SUM(bookings.num_seats), 0) AS booked
+        FROM blocks
+        LEFT JOIN bookings ON bookings.block_id = blocks.id
+        GROUP BY blocks.id
+    `;
     const distrikQuery = 'SELECT id, nama_distrik FROM distrik';
-    const bookingListQuery = 'SELECT b.*, d.nama_distrik FROM bookings b LEFT JOIN distrik d ON b.distrik = d.id ORDER BY b.id DESC';
+    const bookingListQuery = `
+        SELECT
+            bookings.*,
+            distrik.*,
+            sidang_jemaat.*,
+            blocks.*
+        FROM bookings
+        JOIN distrik ON distrik.id = bookings.distrik_id
+        JOIN sidang_jemaat ON sidang_jemaat.id = bookings.sidang_jemaat_id
+        JOIN blocks ON blocks.id = bookings.block_id
+        ORDER BY bookings.id DESC
+    `;
 
-    let seatData = {
-        A: { max: SEAT_LIMITS.A, booked: 0 },
-        B: { max: SEAT_LIMITS.B, booked: 0 },
-        C: { max: SEAT_LIMITS.C, booked: 0 },
-        D: { max: SEAT_LIMITS.D, booked: 0 },
-        E: { max: SEAT_LIMITS.E, booked: 0 },
-        F: { max: SEAT_LIMITS.F, booked: 0 },
-        Yudistira: { max: SEAT_LIMITS.Yudistira, booked: 0 }
-    };
-
-    db.query(bookingQuery, (err, bookingResults) => {
+    db.query(blockQuery, (err, seatData) => {
         if (err) {
             console.error('Error fetching booking data:', err);
             return res.status(500).send('Internal Server Error');
         }
-
-        bookingResults.forEach(row => {
-            if (seatData[row.blok_booking]) {
-                seatData[row.blok_booking].booked = (row.total_seat || 0);
-            }
-        });
 
         db.query(distrikQuery, (err, distrikResults) => {
             if (err) {
@@ -80,55 +88,6 @@ router.get('/', isAuthenticated, (req, res) => {
                 }
 
                 res.render('admin-dashboard', { seatData, bookings, distrikList: distrikResults });
-            });
-        });
-    });
-});
-
-/**
- * Route handler for fetching and rendering booking data for 'Yudistira' block.
- * This route requires user authentication.
- * It fetches booking data, distrik data, and individual bookings for 'Yudistira',
- * and then renders the 'admin-gedung' view with this data.
- *
- * @param {import('express').Request} req - The HTTP request object.
- * @param {import('express').Response} res - The HTTP response object.
- */
-router.get('/yudis', isAuthenticated, (req, res) => {
-    const bookingQuery = 'SELECT blok_booking, SUM(jumlah_seat) AS total_seat FROM bookings WHERE blok_booking = "Yudistira" GROUP BY blok_booking';
-    const distrikQuery = 'SELECT id, nama_distrik FROM distrik';
-
-    db.query(bookingQuery, (err, bookingResults) => {
-        if (err) {
-            console.error('Error fetching booking data:', err);
-            return res.status(500).send('Internal Server Error');
-        }
-
-        db.query(distrikQuery, (err, distrikResults) => {
-            if (err) {
-                console.error('Error fetching distrik data:', err);
-                return res.status(500).send('Internal Server Error');
-            }
-
-            const seatData = {
-                Yudistira: { max: SEAT_LIMITS.Yudistira, booked: 0 }
-            };
-
-            bookingResults.forEach(row => {
-                if (seatData[row.blok_booking]) {
-                    seatData[row.blok_booking].booked = row.total_seat || 0;
-                }
-            });
-
-            const bookingsQuery = 'SELECT b.*, d.nama_distrik FROM bookings b LEFT JOIN distrik d ON b.distrik = d.id WHERE blok_booking = "Yudistira"';
-
-            db.query(bookingsQuery, (err, bookings) => {
-                if (err) {
-                    console.error('Error fetching bookings:', err);
-                    return res.status(500).send('Internal Server Error');
-                }
-
-                res.render('admin-gedung', { seatData, bookings, distrikList: distrikResults });
             });
         });
     });
@@ -180,61 +139,80 @@ router.get('/logout', (req, res) => {
  * @param {import('express').Request} req - The HTTP request object.
  * @param {import('express').Response} res - The HTTP response object.
  */
-router.post('/update-booking/:id', isAuthenticated, (req, res) => {
-    const { id } = req.params;
+router.post('/update-booking/:id', isAuthenticated, async (req, res) => {
+    try {
+        const { id } = req.params;
 
-    if (!id || isNaN(id)) {
-        return res.status(400).json({ success: false, message: 'ID tidak valid.' });
-    }
-
-    const { nama, distrik, asal_sidang, blok_booking, no_wa, jumlah_seat } = req.body;
-    const updateFields = [];
-    const values = [];
-
-    if (nama) {
-        updateFields.push('nama = ?');
-        values.push(nama);
-    }
-    if (distrik) {
-        updateFields.push('distrik = ?');
-        values.push(distrik);
-    }
-    if (asal_sidang) {
-        updateFields.push('asal_sidang = ?');
-        values.push(asal_sidang);
-    }
-    if (blok_booking) {
-        updateFields.push('blok_booking = ?');
-        values.push(blok_booking);
-    }
-    if (no_wa) {
-        updateFields.push('no_wa = ?');
-        values.push(no_wa);
-    }
-    if (jumlah_seat) {
-        updateFields.push('jumlah_seat = ?');
-        values.push(jumlah_seat);
-    }
-
-    if (values.length === 0) {
-        return res.status(400).json({ success: false, message: 'Tidak ada data yang diperbarui.' });
-    }
-
-    const query = `UPDATE bookings SET ${updateFields.join(', ')} WHERE id = ?`;
-    values.push(id);
-
-    db.query(query, values, (err, result) => {
-        if (err) {
-            console.error('Error updating booking:', err);
-            return res.status(500).json({ success: false, message: 'Gagal mengupdate data.' });
+        if (!id || isNaN(id)) {
+            return res.status(400).json({ success: false, message: 'ID tidak valid.' });
         }
+
+        const {
+            name,
+            distrik_id,
+            sidang_jemaat_id,
+            block_id,
+            category,
+            class: kelas,
+            age,
+            whatsapp
+        } = req.body;
+
+        if (!name && !distrik_id && !sidang_jemaat_id && !block_id && !category && !kelas && !age && !whatsapp) {
+            return res.status(400).json({ success: false, message: 'Tidak ada data yang diperbarui.' });
+        }
+
+        const updateFields = [];
+        const values = [];
+
+        if (name) {
+            updateFields.push('name = ?');
+            values.push(name);
+        }
+        if (distrik_id) {
+            updateFields.push('distrik_id = ?');
+            values.push(distrik_id);
+        }
+        if (sidang_jemaat_id) {
+            updateFields.push('sidang_jemaat_id = ?');
+            values.push(sidang_jemaat_id);
+        }
+        if (block_id) {
+            updateFields.push('block_id = ?');
+            values.push(block_id);
+        }
+        if (category) {
+            updateFields.push('category = ?');
+            values.push(category);
+        }
+        if (kelas) {
+            updateFields.push('class = ?');
+            values.push(kelas);
+        }
+        if (age) {
+            updateFields.push('age = ?');
+            values.push(age);
+        }
+        if (whatsapp) {
+            updateFields.push('whatsapp = ?');
+            values.push(whatsapp);
+        }
+
+        values.push(id);
+
+        const updateQuery = `UPDATE bookings SET ${updateFields.join(', ')} WHERE id = ?`;
+
+        const result = await query(updateQuery, values);
 
         if (result.affectedRows > 0) {
-            res.json({ success: true, message: 'Data berhasil diupdate.' });
+            return res.json({ success: true, message: 'Data berhasil diperbarui.' });
         } else {
-            res.json({ success: false, message: 'Data tidak ditemukan atau tidak ada perubahan.' });
+            return res.status(404).json({ success: false, message: 'Data tidak ditemukan atau tidak ada perubahan.' });
         }
-    });
+    } catch (error) {
+        console.error('Error updating booking:', error);
+        return res.status(500).json({ success: false, message: 'Gagal mengupdate data.', error: error.message });
+    }
 });
 
 /**
@@ -246,27 +224,28 @@ router.post('/update-booking/:id', isAuthenticated, (req, res) => {
  * @param {import('express').Request} req - The HTTP request object.
  * @param {import('express').Response} res - The HTTP response object.
  */
-router.delete('/delete-booking/:id', isAuthenticated, (req, res) => {
-    const { id } = req.params;
+router.delete('/delete-booking/:id', isAuthenticated, async (req, res) => {
+    try {
+        const { id } = req.params;
 
-    if (!id || isNaN(id)) {
-        return res.status(400).json({ success: false, message: 'ID tidak valid.' });
-    }
-
-    const query = 'DELETE FROM bookings WHERE id = ?';
-    db.query(query, [id], (err, result) => {
-        if (err) {
-            console.error('Error deleting booking:', err);
-            return res.status(500).json({ success: false, message: 'Gagal menghapus data.' });
+        if (!id || isNaN(id)) {
+            return res.status(400).json({ success: false, message: 'ID tidak valid.' });
         }
+
+        const queryText = 'DELETE FROM bookings WHERE id = ?';
+        const result = await query(queryText, [id]);
 
         if (result.affectedRows > 0) {
-            res.json({ success: true, message: 'Data berhasil dihapus.' });
+            return res.json({ success: true, message: 'Data berhasil dihapus.' });
         } else {
-            res.json({ success: false, message: 'Data tidak ditemukan.' });
+            return res.status(404).json({ success: false, message: 'Data tidak ditemukan.' });
         }
-    });
+    } catch (error) {
+        console.error('Error deleting booking:', error);
+        return res.status(500).json({ success: false, message: 'Gagal menghapus data.', error: error.message });
+    }
 });
+
 
 /**
  * Handles GET request to '/export-excel' endpoint.
@@ -277,7 +256,18 @@ router.delete('/delete-booking/:id', isAuthenticated, (req, res) => {
  * @param {import('express').Response} res - The HTTP response object.
  */
 router.get('/export-excel', isAuthenticated, (req, res) => {
-    const query = 'SELECT bookings.*, distrik.nama_distrik FROM bookings LEFT JOIN distrik ON bookings.distrik = distrik.id ORDER BY bookings.id ASC';
+    const query = `
+        SELECT 
+            bookings.*, 
+            distrik.nama_distrik,
+            sidang_jemaat.nama_sidang,
+            blocks.block_name
+        FROM bookings 
+        JOIN distrik ON distrik.id = bookings.distrik_id
+        JOIN sidang_jemaat ON sidang_jemaat.id = bookings.sidang_jemaat_id
+        JOIN blocks ON blocks.id = bookings.block_id
+        ORDER BY bookings.id ASC
+    `;
 
     db.query(query, (err, results) => {
         if (err) {
@@ -289,10 +279,10 @@ router.get('/export-excel', isAuthenticated, (req, res) => {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Data Booking');
     
-        worksheet.addRow(['Booking ID', 'Nama', 'Distrik', 'Sidang Jemaat', 'Blok Booking', 'No WA', 'Jumlah Seat']);
+        worksheet.addRow(['Booking ID', 'Nama', 'Distrik', 'Sidang Jemaat', 'Kelas', 'Umur', 'WhatsApp', 'Kategori', 'Blok', 'Jumlah Kursi']);
     
         bookings.forEach((booking) => {
-            worksheet.addRow([booking.id, booking.nama, booking.nama_distrik, booking.asal_sidang, booking.blok_booking, booking.no_wa, booking.jumlah_seat]);
+            worksheet.addRow([booking.id, booking.name, booking.nama_distrik, booking.nama_sidang, booking.class, booking.age, booking.whatsapp, booking.category, booking.block_name, booking.num_seats]);
         });
     
         workbook.xlsx.writeBuffer().then((buffer) => {
@@ -304,6 +294,108 @@ router.get('/export-excel', isAuthenticated, (req, res) => {
             res.send(buffer);
         });
     });
+});
+
+router.get("/booking-datatable", isAuthenticated, async (req, res) => {
+    try {
+        let draw = req.query.draw;
+        let start = parseInt(req.query.start) || 0;
+        let length = parseInt(req.query.length) || 10;
+        let searchValue = req.query.search?.value || "";
+        let distrikFilter = req.query.distrik || "";
+        let sidangFilter = req.query.sidang_jemaat || "";
+        let blockFilter = req.query.block || "";
+
+        let whereClause = "WHERE 1=1";
+        let params = [];
+
+        if (searchValue) {
+            whereClause += ` 
+                AND (
+                    bookings.name LIKE ? 
+                    OR distrik.nama_distrik LIKE ?
+                    OR sidang_jemaat.nama_sidang LIKE ?
+                    OR blocks.block_name LIKE ?
+                    OR bookings.category LIKE ?
+                )`;
+            params.push(
+                `%${searchValue}%`, 
+                `%${searchValue}%`, 
+                `%${searchValue}%`, 
+                `%${searchValue}%`, 
+                `%${searchValue}%`
+            );
+        }
+
+        if (distrikFilter) {
+            whereClause += " AND distrik.id = ?";
+            params.push(distrikFilter);
+        }
+
+        if (sidangFilter) {
+            whereClause += " AND sidang_jemaat.id = ?";
+            params.push(sidangFilter);
+        }
+
+        if (blockFilter) {
+            whereClause += " AND blocks.id = ?";
+            params.push(blockFilter);
+        }
+
+        /** 
+         * Query to get total data without filter
+         */
+        const totalQuery = `SELECT COUNT(*) AS total FROM bookings`;
+        const totalResult = await query(totalQuery);
+        const totalRecords = totalResult[0].total;
+
+        /**
+         * Query to get total data after filter is applied
+         */
+        const filteredQuery = `
+            SELECT COUNT(*) AS total 
+            FROM bookings 
+            JOIN distrik ON distrik.id = bookings.distrik_id
+            JOIN sidang_jemaat ON sidang_jemaat.id = bookings.sidang_jemaat_id
+            JOIN blocks ON blocks.id = bookings.block_id
+            ${whereClause}`;
+        const filteredResult = await query(filteredQuery, params);
+        const recordsFiltered = filteredResult[0].total;
+
+        /**
+         * Main query to get bookings data with filter and pagination
+         */
+        const dataQuery = `
+            SELECT 
+                bookings.id,
+                bookings.name,
+                distrik.nama_distrik,
+                sidang_jemaat.nama_sidang,
+                blocks.block_name,
+                bookings.class,
+                bookings.age,
+                bookings.whatsapp,
+                bookings.category
+            FROM bookings
+            JOIN distrik ON distrik.id = bookings.distrik_id
+            JOIN sidang_jemaat ON sidang_jemaat.id = bookings.sidang_jemaat_id
+            JOIN blocks ON blocks.id = bookings.block_id
+            ${whereClause}
+            ORDER BY bookings.id DESC
+            LIMIT ? OFFSET ?`;
+        params.push(length, start);
+        const bookings = await query(dataQuery, params);
+
+        res.json({
+            draw: draw,
+            recordsTotal: totalRecords,
+            recordsFiltered: recordsFiltered,
+            data: bookings
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Terjadi kesalahan pada server." });
+    }
 });
 
 module.exports = router;

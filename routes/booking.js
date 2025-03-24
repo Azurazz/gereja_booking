@@ -1,10 +1,12 @@
 const express = require('express');
 const util = require('util');
-const router = express.Router();
 const db = require('../models/db');
+
+const router = express.Router();
 const beginTransaction = util.promisify(db.beginTransaction).bind(db);
 const commit = util.promisify(db.commit).bind(db);
 const rollback = util.promisify(db.rollback).bind(db);
+const query = util.promisify(db.query).bind(db);
 
 const getSeatInfo = async (gedung = null, block_id = null) => {
     return new Promise((resolve, reject) => {
@@ -106,18 +108,35 @@ router.get('/success', async (req, res) => {
 /** 
  * AJAX ROUTES
  */
-router.get('/asal-sidang/:distrikId', (req, res) => {
-    const { distrikId } = req.params;
-    const query = 'SELECT id, nama_sidang FROM sidang_jemaat WHERE id_distrik = ?';
+router.get('/asal-sidang/:distrikId', async (req, res) => {
+    try {
+        let distrikId = req.params.distrikId;
+        let queryJemaat = `SELECT * FROM sidang_jemaat WHERE id_distrik = ?`;
+        let jemaatList = await query(queryJemaat, [distrikId]);
 
-    db.query(query, [distrikId], (err, results) => {
-        if (err) {
-            console.error('Error fetching asal sidang data:', err);
-            return res.status(500).send('Internal Server Error');
-        }
+        res.json(jemaatList);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Terjadi kesalahan pada server." });
+    }
+});
 
-        res.json(results);
-    });
+router.get('/:bookingId', async (req, res) => {
+    try {
+        let bookingId = req.params.bookingId;
+        let bookingQuery = `
+            SELECT * 
+            FROM bookings
+            WHERE id = ?
+            LIMIT 1
+        `;
+        let bookingList = await query(bookingQuery, [bookingId]);
+
+        res.json(bookingList[0]);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Terjadi kesalahan pada server." });
+    }
 });
 
 router.post('/book', async (req, res) => {
@@ -161,6 +180,8 @@ router.post('/book', async (req, res) => {
                 });
             })
         ]);
+
+        console.log(distrikData, sidangData);
 
         let savedData = {
             distrik_id: reqBody.distrik_id,

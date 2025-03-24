@@ -8,144 +8,144 @@ document.addEventListener('DOMContentLoaded', () => {
     const navUl = document.querySelector('nav ul');
     const header = document.querySelector('header');
 
-    // Buka modal saat tombol edit diklik
-    editButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const row = button.closest('tr');
-            const id = row.getAttribute('data-id'); // Ambil ID dari atribut data-id
-            const nama = row.cells[0].textContent.trim();
-            const distrik = row.cells[1].textContent.trim(); // Ambil data distrik
-            const asalSidangs = row.cells[2].textContent.trim();
-            const blokBooking = row.cells[3].textContent.trim();
-            const noWa = row.cells[4].textContent.trim();
-            const jumlahSeat = row.cells[5].textContent.trim();
+    // // Buka modal saat tombol edit diklik
+    // editButtons.forEach(button => {
+    //     button.addEventListener('click', () => {
+    //         const row = button.closest('tr');
+    //         const id = row.getAttribute('data-id'); // Ambil ID dari atribut data-id
+    //         const nama = row.cells[0].textContent.trim();
+    //         const distrik = row.cells[1].textContent.trim(); // Ambil data distrik
+    //         const asalSidangs = row.cells[2].textContent.trim();
+    //         const blokBooking = row.cells[3].textContent.trim();
+    //         const noWa = row.cells[4].textContent.trim();
+    //         const jumlahSeat = row.cells[5].textContent.trim();
 
-            // Isi form edit dengan data yang ada
-            document.getElementById('editId').value = id;
-            document.getElementById('editNama').value = nama;
-            // document.getElementById('editAsalSidang').value = asalSidang;
-            document.getElementById('editBlokBooking').value = blokBooking;
-            document.getElementById('editNoWa').value = noWa;
-            document.getElementById('editJumlahSeat').value = jumlahSeat;
+    //         // Isi form edit dengan data yang ada
+    //         document.getElementById('editId').value = id;
+    //         document.getElementById('editNama').value = nama;
+    //         // document.getElementById('editAsalSidang').value = asalSidang;
+    //         document.getElementById('editBlokBooking').value = blokBooking;
+    //         document.getElementById('editNoWa').value = noWa;
+    //         document.getElementById('editJumlahSeat').value = jumlahSeat;
             
-            const editDistrik = document.getElementById('editDistrik');
-            const asalSidangSelect = document.getElementById('asal_sidang');
-            // memilih distrik yang sesuai
-            for (let i = 0; i < editDistrik.options.length; i++) {
-                if (editDistrik.options[i].text === distrik) {
-                    editDistrik.selectedIndex = i;
-                    fetch(`/booking/asal-sidang/${editDistrik.options[i].value}`)
-                            .then(res => res.json())
-                            .then(data => {
-                                asalSidangSelect.innerHTML = '';
-                                data.forEach(asalSidang => {
-                                    const option = document.createElement('option');
-                                    option.value = asalSidang.nama_sidang;
-                                    option.textContent = asalSidang.nama_sidang;
-                                    asalSidangSelect.appendChild(option);
-                                    // memilih asal sidang yang sesuai
-                                    for(let j = 0;j < asalSidangSelect.options.length; j++) {
-                                        if (asalSidangSelect.options[j].text === asalSidangs) {
-                                            asalSidangSelect.selectedIndex = j;
-                                        }
-                                    }
-                                });
-                            });
-                    break;
-                }
-            }
+    //         const editDistrik = document.getElementById('editDistrik');
+    //         const asalSidangSelect = document.getElementById('asal_sidang');
+    //         // memilih distrik yang sesuai
+    //         for (let i = 0; i < editDistrik.options.length; i++) {
+    //             if (editDistrik.options[i].text === distrik) {
+    //                 editDistrik.selectedIndex = i;
+    //                 fetch(`/booking/asal-sidang/${editDistrik.options[i].value}`)
+    //                         .then(res => res.json())
+    //                         .then(data => {
+    //                             asalSidangSelect.innerHTML = '';
+    //                             data.forEach(asalSidang => {
+    //                                 const option = document.createElement('option');
+    //                                 option.value = asalSidang.nama_sidang;
+    //                                 option.textContent = asalSidang.nama_sidang;
+    //                                 asalSidangSelect.appendChild(option);
+    //                                 // memilih asal sidang yang sesuai
+    //                                 for(let j = 0;j < asalSidangSelect.options.length; j++) {
+    //                                     if (asalSidangSelect.options[j].text === asalSidangs) {
+    //                                         asalSidangSelect.selectedIndex = j;
+    //                                     }
+    //                                 }
+    //                             });
+    //                         });
+    //                 break;
+    //             }
+    //         }
 
 
-            // Debugging: Cetak data yang diambil
-            console.log('Data yang diambil:', { id, nama, distrik, asalSidangs, blokBooking, noWa, jumlahSeat });
+    //         // Debugging: Cetak data yang diambil
+    //         console.log('Data yang diambil:', { id, nama, distrik, asalSidangs, blokBooking, noWa, jumlahSeat });
 
-            // Tampilkan modal
-            modal.style.display = 'block';
-        });
-    });
+    //         // Tampilkan modal
+    //         modal.style.display = 'block';
+    //     });
+    // });
 
-    // Tutup modal saat tombol close diklik
-    closeModal.addEventListener('click', () => {
-        modal.style.display = 'none';
-    });
+    // // Tutup modal saat tombol close diklik
+    // closeModal.addEventListener('click', () => {
+    //     modal.style.display = 'none';
+    // });
 
-    // Tutup modal saat klik di luar modal
-    window.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
-    });
+    // // Tutup modal saat klik di luar modal
+    // window.addEventListener('click', (event) => {
+    //     if (event.target === modal) {
+    //         modal.style.display = 'none';
+    //     }
+    // });
 
-    // Kirim form edit
-    editForm.addEventListener('submit', (event) => {
-        event.preventDefault();
+    // // Kirim form edit
+    // editForm.addEventListener('submit', (event) => {
+    //     event.preventDefault();
 
-        // Ambil data dari form
-        const formData = new FormData(editForm);
-        const data = {};
-        formData.forEach((value, key) => {
-            if (value.trim() !== '') { // Hanya kirim jika value tidak kosong
-                data[key] = value;
-            }
-        });
+    //     // Ambil data dari form
+    //     const formData = new FormData(editForm);
+    //     const data = {};
+    //     formData.forEach((value, key) => {
+    //         if (value.trim() !== '') { // Hanya kirim jika value tidak kosong
+    //             data[key] = value;
+    //         }
+    //     });
 
-        const id = data.id; // Ambil ID dari form
-        delete data.id; // Hapus ID dari data yang akan dikirim
+    //     const id = data.id; // Ambil ID dari form
+    //     delete data.id; // Hapus ID dari data yang akan dikirim
 
-        // Debugging: Cetak data yang dikirim
-        console.log('Data yang dikirim:', data);
+    //     // Debugging: Cetak data yang dikirim
+    //     console.log('Data yang dikirim:', data);
 
-        // Kirim data ke backend
-        fetch(`/admin/update-booking/${id}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json', // Pastikan header diatur ke JSON
-            },
-            body: JSON.stringify(data), // Kirim data sebagai JSON
-        })
-        .then(response => response.json())
-        .then(result => {
-            // Debugging: Cetak respons dari server
-            console.log('Respons dari server:', result);
+    //     // Kirim data ke backend
+    //     fetch(`/admin/update-booking/${id}`, {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json', // Pastikan header diatur ke JSON
+    //         },
+    //         body: JSON.stringify(data), // Kirim data sebagai JSON
+    //     })
+    //     .then(response => response.json())
+    //     .then(result => {
+    //         // Debugging: Cetak respons dari server
+    //         console.log('Respons dari server:', result);
 
-            if (result.success) {
-                alert('Data berhasil diupdate!');
-                modal.style.display = 'none'; // Tutup modal
-                window.location.reload(); // Reload halaman
-            } else {
-                alert(result.message || 'Gagal mengupdate data.');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Terjadi kesalahan saat mengupdate data.');
-        });
-    });
+    //         if (result.success) {
+    //             alert('Data berhasil diupdate!');
+    //             modal.style.display = 'none'; // Tutup modal
+    //             window.location.reload(); // Reload halaman
+    //         } else {
+    //             alert(result.message || 'Gagal mengupdate data.');
+    //         }
+    //     })
+    //     .catch(error => {
+    //         console.error('Error:', error);
+    //         alert('Terjadi kesalahan saat mengupdate data.');
+    //     });
+    // });
 
-    // Hapus data
-    deleteButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const id = button.getAttribute('data-id');
-            if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-                fetch(`/admin/delete-booking/${id}`, {
-                    method: 'DELETE',
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        alert('Data berhasil dihapus!');
-                        window.location.reload();
-                    } else {
-                        alert(result.message || 'Gagal menghapus data.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Terjadi kesalahan saat menghapus data.');
-                });
-            }
-        });
-    });
+    // // Hapus data
+    // deleteButtons.forEach(button => {
+    //     button.addEventListener('click', () => {
+    //         const id = button.getAttribute('data-id');
+    //         if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+    //             fetch(`/admin/delete-booking/${id}`, {
+    //                 method: 'DELETE',
+    //             })
+    //             .then(response => response.json())
+    //             .then(result => {
+    //                 if (result.success) {
+    //                     alert('Data berhasil dihapus!');
+    //                     window.location.reload();
+    //                 } else {
+    //                     alert(result.message || 'Gagal menghapus data.');
+    //                 }
+    //             })
+    //             .catch(error => {
+    //                 console.error('Error:', error);
+    //                 alert('Terjadi kesalahan saat menghapus data.');
+    //             });
+    //         }
+    //     });
+    // });
 
     // Toggle navbar saat burger diklik
     burger.addEventListener('click', () => {
