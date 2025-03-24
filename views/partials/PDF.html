@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bukti Pendaftaran Kebaktian</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: url('/images/background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            position: relative;
+        }
+        
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.85);
+            z-index: -1;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 30px;
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin-right: 15px;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f9f9f9;
+        }
+        
+        .logo img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .hotel-info {
+            flex: 1;
+        }
+        
+        .hotel-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .hotel-address {
+            font-size: 13px;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        
+        .hotel-contact {
+            font-size: 11px;
+            color: #666;
+        }
+        
+        .title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0 8px;
+            text-transform: uppercase;
+            color: #333;
+        }
+        
+        .subtitle {
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 20px;
+            color: #555;
+        }
+        
+        .registration-info {
+            font-size: 13px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        
+        table {
+            width: 80%; /* Lebar tabel diperkecil */
+            margin: 20px auto; /* Tabel dipusatkan */
+            border-collapse: collapse;
+            background-color: white;
+            
+        }
+        
+        table, th, td {
+            border: 1px solid #333;
+            font-size: 13px; /* Ukuran font diperkecil */
+        }
+        
+        th, td {
+            padding: 8px 12px; /* Padding diperkecil */
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            width: 35%; /* Lebar kolom pertama */
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #555;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <img src="/images/logo.jpg" >
+            </div>
+            <div class="hotel-info">
+                <div class="hotel-name">Hotel Java Heritage Purwokerto</div>
+                <div class="hotel-address">
+                    Jl. Jend. Soedirman, Kec. Purwokerto Timur,<br>
+                    Kabupaten Banyumas, Jawa Tengah
+                </div>
+            </div>
+        </div>
+
+        <div class="title">Bukti Pendaftaran</div>
+        <div class="subtitle">KEBAKTIAN HARI ANAK 2025</div>
+
+        <div class="registration-info">
+            Yang terdata bawah ini terdaftar dalam kebaktian hari anak 2025:
+        </div>
+
+        <table>
+            <tr>
+                <th>Nama</th>
+                <td></td>
+            </tr>
+            <tr>
+                <th>Distrik</th>
+                <td></td>
+            </tr>
+            <tr>
+                <th>Sidang</th>
+                <td></td>
+            </tr>
+        </table>
+
+        
+    </div>
+
+</body>
+</html>
