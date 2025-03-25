@@ -172,6 +172,7 @@
             const jumlahPendampingInput = document.getElementById("jumlah_pendamping");
             const anakContainer = document.getElementById("anak_container");
             const pendampingContainer = document.getElementById("pendamping_container");
+            const isMobile = window.matchMedia("(max-width: 768px)");
     
             function generateChildFields(count) {
                 anakContainer.innerHTML = "";
@@ -179,24 +180,25 @@
                 for (let i = 1; i <= count; i++) {
                     const row = document.createElement("div");
                     row.style.display = "flex";
+                    row.style.flexDirection = isMobile.matches ? "column" : "row";
                     row.style.gap = "10px";
                     row.style.width = "100%";
-                    row.style.alignItems = "center";
+                    row.style.alignItems = isMobile.matches ? "stretch" : "center";
     
                     row.innerHTML = `
                         <div style="flex-basis: 3%; text-align: center;">
                             <span style="font-size: 14px; color: gray;">${i}</span>
                         </div>
     
-                        <div style="flex-basis: 70%;">
+                        <div style="flex-basis: ${isMobile.matches ? '100%' : '70%'};">
                             <input type="text" name="child_name[]" placeholder="Nama Lengkap Anak" required>
                         </div>
     
-                        <div style="flex-basis: 12%;">
+                        <div style="flex-basis: ${isMobile.matches ? '100%' : '12%'};">
                             <input type="number" name="child_class[]" min="1" placeholder="Kelas" required>
                         </div>
     
-                        <div style="flex-basis: 15%;">
+                        <div style="flex-basis: ${isMobile.matches ? '100%' : '15%'};">
                             <input type="number" name="child_age[]" min="1" max="100" placeholder="Umur" required>
                         </div>
                     `;
@@ -211,20 +213,21 @@
                 for (let i = 1; i <= count; i++) {
                     const row = document.createElement("div");
                     row.style.display = "flex";
+                    row.style.flexDirection = isMobile.matches ? "column" : "row";
                     row.style.gap = "10px";
                     row.style.width = "100%";
-                    row.style.alignItems = "center";
+                    row.style.alignItems = isMobile.matches ? "stretch" : "center";
     
                     row.innerHTML = `
                         <div style="flex-basis: 3%; text-align: center;">
                             <span style="font-size: 14px; color: gray;">${i}</span>
                         </div>
     
-                        <div style="flex-basis: 69%;">
+                        <div style="flex-basis: ${isMobile.matches ? '100%' : '69%'};">
                             <input type="text" name="pendamping_name[]" placeholder="Nama Lengkap Pendamping" required>
                         </div>
     
-                        <div style="flex-basis: 28%;">
+                        <div style="flex-basis: ${isMobile.matches ? '100%' : '28%'};">
                             <input type="text" name="pendamping_whatsapp[]" placeholder="WhatsApp Pendamping" required>
                         </div>
                     `;
@@ -236,19 +239,20 @@
             function updateFields() {
                 let jumlahAnak = parseInt(jumlahAnakInput.value) || 1;
                 jumlahAnak = jumlahAnak > 100 ? 100 : jumlahAnak;
-
+    
                 let jumlahPendamping = Math.ceil(jumlahAnak / 5);
                 jumlahPendampingInput.value = jumlahPendamping;
-
+    
                 let totalKursi = jumlahAnak + jumlahPendamping;
                 document.getElementById("num_seats").value = totalKursi;
-
+    
                 generateChildFields(jumlahAnak);
                 generatePendampingFields(jumlahPendamping);
             }
     
-            updateFields();
+            isMobile.addEventListener("change", updateFields);
     
+            updateFields();
             jumlahAnakInput.addEventListener("input", updateFields);
         });
     </script>

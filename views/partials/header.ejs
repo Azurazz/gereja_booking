@@ -1,13 +1,99 @@
+<style>
+    .logo-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .logo {
+        height: 80px;
+        width: auto;
+    }
+
+    @media (max-width: 768px) {
+        body {
+            padding-top: 150px;
+        }
+
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #333;
+            color: #fff;
+            padding: 15px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: top 0.3s ease-in-out;
+            z-index: 1000;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .logo {
+            height: 50px;
+        }
+
+        .logo-title {
+            justify-content: center;
+        }
+
+        .logo-title h1 {
+            display: none;
+        }
+
+        nav ul {
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+    }
+</style>
+
 <header>
-    <div class="container">
-        <h1>Kebaktian Anak 2025</h1>
-        <nav>
-            <ul>
-                <li><a href="/">Home</a></li>
-                <li><a href="/booking/hastina">Booking Gedung Hastina</a></li>
-                <li><a href="/booking/yudistira">Booking Gedung Yudistira</a></li>
-                <li><a href="/admin">Admin</a></li>
-            </ul>
-        </nav>
+    <div class="container" style="margin: auto; padding-top: 10px; padding-bottom: 10px;">
+        <div style="margin: auto;">
+            <div class="logo-title">
+                <img src="/images/hari-anak-logo-2.png" alt="Logo" class="logo">
+                <h1>Kebaktian Anak 2025</h1>
+            </div>
+        </div>
+        <div style="margin: auto;">
+            <nav>
+                <ul>
+                    <li><a href="/">Beranda</a></li>
+                    <li><a href="/admin">Admin</a></li>
+                </ul>
+            </nav>
+        </div>
     </div>
 </header>
+
+<script>
+    let lastScrollTop = 0;
+    const header = document.querySelector("header");
+
+    function handleScroll() {
+        if (window.innerWidth <= 768) {
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+            if (scrollTop > lastScrollTop) {
+                header.style.top = "-200px";
+            } else {
+                header.style.top = "0";
+            }
+
+            lastScrollTop = scrollTop;
+        } else {
+            header.style.top = "0";
+        }
+    }
+
+    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("resize", handleScroll);
+</script>
