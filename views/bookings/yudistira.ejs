@@ -176,20 +176,29 @@
         document.addEventListener('DOMContentLoaded', () => {
             const distrikSelect = document.getElementById('distrik');
             const asalSidangSelect = document.getElementById('sidang_jemaat_id');
+            const gedungInput = document.querySelector('input[name="gedung"]');
 
             distrikSelect.addEventListener('change', () => {
                 const distrikId = distrikSelect.value;
-                fetch(`/booking/asal-sidang/${distrikId}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        asalSidangSelect.innerHTML = '';
-                        data.forEach(asalSidang => {
-                            const option = document.createElement('option');
-                            option.value = asalSidang.id;
-                            option.textContent = asalSidang.nama_sidang;
-                            asalSidangSelect.appendChild(option);
-                        });
+                const gedung = encodeURIComponent(gedungInput.value);
+                
+                fetch(`/booking/asal-sidang/${distrikId}?gedung=${gedung}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    asalSidangSelect.innerHTML = '';
+                    data.forEach(asalSidang => {
+                        const option = document.createElement('option');
+                        option.value = asalSidang.id;
+                        option.textContent = asalSidang.nama_sidang;
+                        asalSidangSelect.appendChild(option);
                     });
+                })
+                .catch(error => console.error('Error fetching data:', error));
             });
         });
     </script>
@@ -288,7 +297,7 @@
                     }, 1000);
 
                     setTimeout(() => {
-                        window.location.href = `success?data=${encodeURIComponent(JSON.stringify(result.data))}`;
+                        window.location.href = `/booking/success/${result.data.booking_code}`;
                     }, 1800);
                 } else {
                     alertBox.style.backgroundColor = "red";

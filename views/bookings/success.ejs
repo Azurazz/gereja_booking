@@ -74,23 +74,26 @@
         <p>Terima kasih! Data yang Anda masukkan telah berhasil diproses.</p>
 
         <p class="download-info">
-            Dokumen Bukti Pemesanan Anda akan terunduh secara otomatis. Jika belum, silakan klik tombol di bawah ini:
+            Dokumen Bukti Pemesanan Anda akan terunduh secara otomatis setelah kurang lebih 5 detik. Jika belum, silakan klik tombol di bawah ini:
         </p>
-        <a href="#" class="download-btn" onclick="alert('Coming Soon!')">Download Bukti Pemesanan (PDF)</a>
+        <a href="#" class="download-btn" onclick="downloadPDF('<%= data.bookingDetail.booking_code %>'); return false;">
+            Download Bukti Pemesanan (PDF)
+        </a>        
 
         <p><strong>Mohon tunjukkan Dokumen Bukti Pemesanan Anda yang telah berhasil diunduh kepada Sekretariat pada saat Anda dan rombongan melakukan Registrasi Kebaktian Anak 2025.</strong></p>
         <p>Berikut adalah detail booking Anda:</p>
 
         <% if (data) { %>
             <ul>
-                <li><strong>Distrik:</strong> <%= data.distrik_name %></li>
-                <li><strong>Sidang Jemaat:</strong> <%= data.sidang_jemaat_name %></li>
-                <li><strong>Gedung:</strong> <%= data.gedung %></li>
-                <li><strong>Blok:</strong> <%= data.block_name %></li>
-                <li><strong>Jumlah Kursi:</strong> <%= data.num_seats %></li>
+                <li><strong>Kode Pemesanan:</strong> <%= data.bookingDetail.booking_code %></li>
+                <li><strong>Distrik:</strong> <%= data.bookingDetail.nama_distrik %></li>
+                <li><strong>Sidang Jemaat:</strong> <%= data.bookingDetail.nama_sidang %></li>
+                <li><strong>Gedung:</strong> <%= data.bookingDetail.gedung %></li>
+                <li><strong>Blok:</strong> <%= data.bookingDetail.block_name %></li>
+                <li><strong>Jumlah Kursi:</strong> <%= data.bookingDetail.num_seats %></li>
             </ul>
             
-            <% const children = data.bookings.filter(booking => booking.category === 'Anak'); %>
+            <% const children = data.bookingList.filter(booking => booking.category === 'Anak'); %>
             <% if (children.length > 0) { %>
                 <h4>Daftar Anak-Anak:</h4>
 
@@ -120,9 +123,9 @@
                 </div>
             <% } %>
 
-            <% const guardians = data.bookings.filter(booking => booking.category !== 'Anak'); %>
+            <% const guardians = data.bookingList.filter(booking => booking.category !== 'Anak'); %>
             <% if (guardians.length > 0) { %>
-                <h4>Daftar Pendamping:</h4>
+                <h4>Daftar Pendamping/Umum:</h4>
 
                 <div class="table-container">
                     <table class="table table-striped">
@@ -170,13 +173,43 @@
         });
     </script>
 
-    <!-- Comming soon -->
-    <!-- <script>
-        window.onload = function() {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const container = document.querySelector(".success-container");
             setTimeout(() => {
-                window.location.href = "/download-booking-pdf";
-            }, 1000); // Delay 1 detik agar user bisa melihat halaman success
-        };
-    </script> -->
+                container.style.opacity = "1";
+                container.style.transform = "translateY(0)";
+            }, 200);
+
+            const bookingCode = "<%= data.bookingDetail.booking_code %>";
+
+            setTimeout(() => {
+                downloadPDF(bookingCode);
+            }, 2000);
+        });
+
+        function downloadPDF(bookingCode) {
+            fetch(`/booking/download-booking-pdf/${bookingCode}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("File tidak ditemukan atau terjadi kesalahan saat mengunduh.");
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `${bookingCode}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("Gagal mengunduh bukti pemesanan.");
+                });
+        }
+    </script>
 </body>
 </html>

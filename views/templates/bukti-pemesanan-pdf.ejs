@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bukti Pendaftaran Kebaktian</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: url('/images/background-image.png') no-repeat center center fixed;
+            background-size: cover;
+            position: relative;
+        }
+        
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.85);
+            z-index: -1;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 30px;
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin-right: 15px;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f9f9f9;
+        }
+        
+        .logo img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .hotel-info {
+            flex: 1;
+        }
+        
+        .hotel-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .hotel-address {
+            font-size: 13px;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        
+        .hotel-contact {
+            font-size: 11px;
+            color: #666;
+        }
+        
+        .title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0 8px;
+            text-transform: uppercase;
+            color: #333;
+        }
+        
+        .subtitle {
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 20px;
+            color: #555;
+        }
+        
+        .registration-info {
+            font-size: 13px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: white;
+            
+        }
+        
+        table, th, td {
+            border: 1px solid #333;
+            font-size: 13px;
+        }
+        
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            width: 35%;
+        }
+
+        .notes {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #333;
+            font-size: 12px;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <img src="<%= protocol %>://<%= host %>/images/hari-anak-logo-1.png">
+            </div>
+            <div class="hotel-info">
+                <div class="hotel-name">Panitia Hari Anak Bersama Rasul Kepala</div>
+                <div class="hotel-address">
+                    Sekretariat: Jl. Pahlawan No. 590, Tanjung, Kec. Purwokerto Selatan, Kabupaten Banyumas, Jawa Tengah
+                </div>
+                <div class="hotel-address">
+                    Email: panitiahan2025@gmail.com
+                </div>
+            </div>
+        </div>
+
+        <div class="title">Bukti Pendaftaran</div>
+        <div class="subtitle">KEBAKTIAN AGUNG ANAK 2025</div>
+
+        <div class="registration-info">
+            Berikut ini adalah daftar peserta yang telah terdaftar dalam Kebaktian Agung Anak 2025:
+            <ul>
+                <li><strong>Kode Pemesanan:</strong> <%= booking.booking_code %></li>
+                <li><strong>Distrik:</strong> <%= booking.distrik_name %></li>
+                <li><strong>Sidang Jemaat:</strong> <%= booking.sidang_jemaat_name %></li>
+                <li><strong>Gedung:</strong> <%= booking.gedung %></li>
+                <li><strong>Blok:</strong> <%= booking.block_name %></li>
+                <li><strong>Jumlah Kursi:</strong> <%= booking.num_seats %></li>
+            </ul>
+
+            <% const children = booking.bookings.filter(booking => booking.category === 'Anak'); %>
+            <% if (children.length > 0) { %>
+                <h4>Daftar Anak-Anak:</h4>
+
+                <div class="table-container">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Nama</th>
+                                <th>Kategori</th>
+                                <th>Kelas</th>
+                                <th>Usia</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% children.forEach((booking, index) => { %>
+                                <tr>
+                                    <td><%= index + 1 %></td>
+                                    <td><%= booking.name %></td>
+                                    <td><%= booking.category %></td>
+                                    <td><%= booking.class ? booking.class : '-' %></td>
+                                    <td><%= booking.age ? booking.age : '-' %></td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } %>
+
+            <% const guardians = booking.bookings.filter(booking => booking.category !== 'Anak'); %>
+            <% if (guardians.length > 0) { %>
+                <h4>Daftar Pendamping/Umum:</h4>
+
+                <div class="table-container">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Nama</th>
+                                <th>Kategori</th>
+                                <th>WhatsApp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% guardians.forEach((booking, index) => { %>
+                                <tr>
+                                    <td><%= index + 1 %></td>
+                                    <td><%= booking.name %></td>
+                                    <td><%= booking.category %></td>
+                                    <td><%= booking.whatsapp ? booking.whatsapp : '-' %></td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+                
+            <% } %>
+
+            <% if (children.length === 0 && guardians.length === 0) { %>
+                <p>Tidak ada data Anak atau Pendamping yang terdaftar.</p>
+            <% } %>
+        </div>
+
+        <div class="notes">
+            <strong>Catatan:</strong>
+            <p>Mohon membawa bukti pendaftaran ini saat proses registrasi kebaktian.</p>
+            <p>Untuk informasi lebih lanjut, silakan menghubungi panitia melalui alamat email yang tertera di atas.</p>
+        </div>
+    </div>
+</body>
+
+</html>

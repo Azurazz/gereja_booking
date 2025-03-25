@@ -54,10 +54,69 @@
             <% }) %>
         </div>
 
-        <h2>Data Pemesan</h2>
+        <h2>Data Pemesanan</h2>
 
-        <!-- Table Section -->
-        <div class="table-responsive">
+        <!-- Pemesanan Table Section -->
+        <div class="table-responsive" style="padding-bottom: 30px;">
+            <div class="container" style="width: 100%; padding: 0;">
+                <div class="row" style="display: flex; width: 100%; gap: 10px;">
+                    <div class="col">
+                        <label for="filterDistrikBooking" class="form-label">Filter Distrik:</label>
+                        <select id="filterDistrikBooking" class="select2 form-control">
+                            <option value="">Semua</option>
+                            <% distrikList.forEach(distrik => { %>
+                                <option value="<%= distrik.id %>"><%= distrik.nama_distrik %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+            
+                    <div class="col">
+                        <label for="filterJemaatBooking" class="form-label">Filter Sidang Jemaat:</label>
+                        <select id="filterJemaatBooking" class="select2 form-control" disabled>
+                            <option value="">Semua</option>
+                        </select>
+                    </div>
+            
+                    <div class="col">
+                        <label for="filterBlokBooking" class="form-label">Filter Blok:</label>
+                        <select id="filterBlokBooking" class="select2 form-control">
+                            <option value="">Semua</option>
+                            <% seatData.forEach(block => { %>
+                                <option value="<%= block.id %>"><%= block.block_name %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container" style="width: 100%; padding-left: 0; padding-right: 0;">
+                <button id="export-booking-to-excel" type="submit" class="btn btn-success" style="padding: 8px 12px;">
+                    Export <i class="fas fa-file-excel"></i>
+                </button>
+            </div>
+
+            <table id="bookingDetailTable" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Kode Pemesanan</th>
+                        <th>Distrik</th>
+                        <th>Sidang Jemaat</th>
+                        <th>Blok</th>
+                        <th>Jumlah Kursi</th>
+                        <th>Waktu Pemesanan</th>
+                        <th>Dokumen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>Data Peserta Kebaktian</h2>
+
+        <!-- Peserta Kebaktian Table Section -->
+        <div class="table-responsive" style="padding-bottom: 30px;">
             <div class="container" style="width: 100%; padding: 0;">
                 <div class="row" style="display: flex; width: 100%; gap: 10px;">
                     <div class="col">
@@ -84,6 +143,17 @@
                             <% seatData.forEach(block => { %>
                                 <option value="<%= block.id %>"><%= block.block_name %></option>
                             <% }) %>
+                        </select>
+                    </div>
+            
+                    <div class="col">
+                        <label for="filterKategori" class="form-label">Filter Kategori:</label>
+                        <select id="filterKategori" class="select2 form-control">
+                            <option value="">Semua</option>
+                            <option value="Anak">Anak</option>
+                            <option value="Pendamping">Pendamping</option>
+                            <option value="Orang Tua Peserta">Orang Tua Peserta</option>
+                            <option value="Umum">Umum</option>
                         </select>
                     </div>
                 </div>
@@ -261,9 +331,10 @@
     <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
 
+    <!-- Datatables Configuration -->
     <script>
         $(document).ready(function () {
-            let table = $('#bookingTable').DataTable({
+            let bookingTable = $('#bookingTable').DataTable({
                 "processing": true,
                 "serverSide": true,
                 "paging": true,
@@ -292,6 +363,7 @@
                         d.distrik = $('#filterDistrik').val();
                         d.sidang_jemaat = $('#filterJemaat').val();
                         d.block = $('#filterBlok').val();
+                        d.category = $('#filterKategori').val();
                     }
                 },
                 "columns": [
@@ -343,6 +415,107 @@
                 ],
             });
 
+            let bookingDetailTable = $('#bookingDetailTable').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "paging": true,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "responsive": true,
+                "pageLength": 10,
+                "scrollX": true,
+                "language": {
+                    "search": "Cari:",
+                    "lengthMenu": "Tampilkan _MENU_ entri",
+                    "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+                    "paginate": {
+                        "first": "Awal",
+                        "last": "Akhir",
+                        "next": "Berikutnya",
+                        "previous": "Sebelumnya"
+                    }
+                },
+                "order": [[0, "desc"]],
+                "ajax": {
+                    "url": "/admin/booking-detail-datatable",
+                    "type": "GET",
+                    "data": function (d) {
+                        d.distrik = $('#filterDistrikBooking').val();
+                        d.sidang_jemaat = $('#filterJemaatBooking').val();
+                        d.block = $('#filterBlokBooking').val();
+                    }
+                },
+                "columns": [
+                    { 
+                        "data": "id", 
+                        "visible": false
+                    },
+                    {
+                        "data": "booking_code", 
+                        "visible": true 
+                    },
+                    {
+                        "data": "nama_distrik", 
+                        "visible": true 
+                    },
+                    {
+                        "data": "nama_sidang", 
+                        "visible": true 
+                    },
+                    {
+                        "data": "block_name", 
+                        "visible": true 
+                    },
+                    {
+                        "data": "num_seats", 
+                        "visible": true 
+                    },
+                    {
+                        "data": "created_at",
+                        "render": function (data, type, row) {
+                            let date = new Date(data);
+                            let day = date.getDate();
+                            let month = date.toLocaleString('default', { month: 'long' });
+                            let year = date.getFullYear();
+                            let hours = date.getHours().toString().padStart(2, '0');
+                            let minutes = date.getMinutes().toString().padStart(2, '0');
+                            let seconds = date.getSeconds().toString().padStart(2, '0');
+                            return `${day} ${month} ${year} ${hours}:${minutes}:${seconds}`;
+                        },
+                        "visible": true 
+                    },
+                    { 
+                        "data": "booking_code",
+                        "render": function (data, type, row) {
+                            return `<div style="text-align: center;"><a href="/booking/download-booking-pdf/${data}" class="btn-download" data-id="${data}"><i class="fas fa-download"></i></a></div>`;
+                        }
+                    }
+                ],
+            });
+
+            $('#filterDistrikBooking').select2({
+                placeholder: "Pilih Distrik",
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#filterJemaatBooking').select2({
+                placeholder: "Pilih Distrik",
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#filterBlokBooking').select2({
+                placeholder: "Pilih Blok",
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#filterDistrikBooking, #filterJemaatBooking, #filterBlokBooking').on('change', function () {
+                bookingDetailTable.ajax.reload();
+            });
+
             $('#filterDistrik').select2({
                 placeholder: "Pilih Distrik",
                 allowClear: true,
@@ -361,8 +534,14 @@
                 width: '100%'
             });
 
-            $('#filterDistrik, #filterJemaat, #filterBlok').on('change', function () {
-                table.ajax.reload();
+            $('#filterKategori').select2({
+                placeholder: "Pilih Kategori",
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#filterDistrik, #filterJemaat, #filterBlok, #filterKategori').on('change', function () {
+                bookingTable.ajax.reload();
             });
 
             $('#filterDistrik').on('change', function () {
@@ -455,7 +634,7 @@
                     success: function (response) {
                         alert('Data berhasil diperbarui!');
                         $('#editModal').css('display', 'none');
-                        table.ajax.reload(null, false);
+                        bookingTable.ajax.reload(null, false);
                     },
                     error: function (err) {
                         console.error('Gagal menyimpan perubahan:', err);
@@ -473,7 +652,7 @@
                         type: 'DELETE',
                         success: function (response) {
                             alert('Data berhasil dihapus!');
-                            table.ajax.reload(null, false);
+                            bookingTable.ajax.reload(null, false);
                         },
                         error: function (err) {
                             console.error('Gagal menghapus data:', err);

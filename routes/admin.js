@@ -6,8 +6,6 @@ const ExcelJS = require('exceljs');
 const router = express.Router();
 const query = util.promisify(db.query).bind(db);
 
-// const SEAT_LIMITS = require('../config/seatLimits');
-
 /**
  * Checks if the user is authenticated.
  * If the user is logged in, proceeds to the next middleware or route handler.
@@ -30,8 +28,6 @@ function isAuthenticated(req, res, next) {
         res.status(500).send('Internal Server Error');
     }
 }
-
-// router.use(express.json());
 
 /**
  * Renders the admin dashboard page.
@@ -232,13 +228,13 @@ router.delete('/delete-booking/:id', isAuthenticated, async (req, res) => {
             return res.status(400).json({ success: false, message: 'ID tidak valid.' });
         }
 
-        const queryText = 'DELETE FROM bookings WHERE id = ?';
+        const queryText = 'UPDATE bookings SET deleted_at = NOW() WHERE id = ? AND deleted_at IS NULL';
         const result = await query(queryText, [id]);
 
         if (result.affectedRows > 0) {
-            return res.json({ success: true, message: 'Data berhasil dihapus.' });
+            return res.json({ success: true, message: 'Data berhasil dihapus (soft delete).' });
         } else {
-            return res.status(404).json({ success: false, message: 'Data tidak ditemukan.' });
+            return res.status(404).json({ success: false, message: 'Data tidak ditemukan atau sudah dihapus sebelumnya.' });
         }
     } catch (error) {
         console.error('Error deleting booking:', error);
@@ -305,6 +301,7 @@ router.get("/booking-datatable", isAuthenticated, async (req, res) => {
         let distrikFilter = req.query.distrik || "";
         let sidangFilter = req.query.sidang_jemaat || "";
         let blockFilter = req.query.block || "";
+        let categoryFilter = req.query.category || "";
 
         let whereClause = "WHERE 1=1";
         let params = [];
@@ -327,6 +324,8 @@ router.get("/booking-datatable", isAuthenticated, async (req, res) => {
             );
         }
 
+        whereClause += " AND bookings.deleted_at IS NULL";
+
         if (distrikFilter) {
             whereClause += " AND distrik.id = ?";
             params.push(distrikFilter);
@@ -340,6 +339,11 @@ router.get("/booking-datatable", isAuthenticated, async (req, res) => {
         if (blockFilter) {
             whereClause += " AND blocks.id = ?";
             params.push(blockFilter);
+        }
+
+        if (categoryFilter) {
+            whereClause += " AND bookings.category = ?";
+            params.push(categoryFilter);
         }
 
         /** 
@@ -391,6 +395,104 @@ router.get("/booking-datatable", isAuthenticated, async (req, res) => {
             recordsTotal: totalRecords,
             recordsFiltered: recordsFiltered,
             data: bookings
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Terjadi kesalahan pada server." });
+    }
+});
+
+router.get("/booking-detail-datatable", isAuthenticated, async (req, res) => {
+    try {
+        let draw = req.query.draw;
+        let start = parseInt(req.query.start) || 0;
+        let length = parseInt(req.query.length) || 10;
+        let searchValue = req.query.search?.value || "";
+        let distrikFilter = req.query.distrik || "";
+        let sidangFilter = req.query.sidang_jemaat || "";
+        let blockFilter = req.query.block || "";
+
+        let whereClause = "WHERE 1=1";
+        let params = [];
+
+        if (searchValue) {
+            whereClause += ` 
+                AND (
+                    booking_details.booking_code LIKE ? 
+                    OR distrik.nama_distrik LIKE ?
+                    OR sidang_jemaat.nama_sidang LIKE ?
+                    OR blocks.block_name LIKE ?
+                )`;
+            params.push(
+                `%${searchValue}%`,
+                `%${searchValue}%`,
+                `%${searchValue}%`,
+                `%${searchValue}%`
+            );
+        }
+
+        if (distrikFilter) {
+            whereClause += " AND distrik.id = ?";
+            params.push(distrikFilter);
+        }
+
+        if (sidangFilter) {
+            whereClause += " AND sidang_jemaat.id = ?";
+            params.push(sidangFilter);
+        }
+
+        if (blockFilter) {
+            whereClause += " AND blocks.id = ?";
+            params.push(blockFilter);
+        }
+
+        /** 
+         * Query to get total data without filter
+         */
+        const totalQuery = `SELECT COUNT(*) AS total FROM booking_details`;
+        const totalResult = await query(totalQuery);
+        const totalRecords = totalResult[0].total;
+
+        /**
+         * Query to get total data after filter is applied
+         */
+        const filteredQuery = `
+            SELECT COUNT(*) AS total 
+            FROM booking_details 
+            JOIN distrik ON distrik.id = booking_details.distrik_id
+            JOIN sidang_jemaat ON sidang_jemaat.id = booking_details.sidang_jemaat_id
+            JOIN blocks ON blocks.id = booking_details.block_id
+            ${whereClause}`;
+        const filteredResult = await query(filteredQuery, params);
+        const recordsFiltered = filteredResult[0].total;
+
+        /**
+         * Main query to get bookings data with filter and pagination
+         */
+        const dataQuery = `
+            SELECT 
+                booking_details.id,
+                booking_details.booking_code,
+                distrik.nama_distrik,
+                sidang_jemaat.nama_sidang,
+                blocks.block_name,
+                booking_details.num_seats,
+                booking_details.created_at
+            FROM booking_details
+            JOIN distrik ON distrik.id = booking_details.distrik_id
+            JOIN sidang_jemaat ON sidang_jemaat.id = booking_details.sidang_jemaat_id
+            JOIN blocks ON blocks.id = booking_details.block_id
+            ${whereClause}
+            ORDER BY booking_details.id DESC
+            LIMIT ? OFFSET ?`;
+        params.push(length, start);
+        const bookingDetails = await query(dataQuery, params);
+
+        res.json({
+            draw: draw,
+            recordsTotal: totalRecords,
+            recordsFiltered: recordsFiltered,
+            data: bookingDetails
         });
     } catch (error) {
         console.error(error);
