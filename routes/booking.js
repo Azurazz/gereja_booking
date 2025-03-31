@@ -1,7 +1,8 @@
 const express = require('express');
 const util = require('util');
 const db = require('../models/db');
-const puppeteer = require("puppeteer");
+// const puppeteer = require("puppeteer");
+const pdf = require("html-pdf");
 const fs = require("fs-extra");
 const path = require("path");
 const ejs = require("ejs");
@@ -477,7 +478,60 @@ router.get("/download-booking-pdf/:bookingCode", async (req, res) => {
     }
 });
 
-async function generatePDF(protocol, host, bookingData, bookingCode) {
+// async function generatePDF(protocol, host, bookingData, bookingCode) {
+//     try {
+//         const templatePath = path.join(__dirname, "..", "views", "templates", "bukti-pemesanan-pdf.ejs");
+//         const rootPath = path.resolve(__dirname, "..");
+//         const storageDir = path.join(rootPath, "public", "storage", "pdf");
+//         const relativePath = `storage/pdf/${bookingCode}.pdf`;
+//         const outputPath = path.join(rootPath, "public", relativePath);
+
+//         await fs.mkdir(storageDir, { recursive: true });
+
+//         const template = await fs.readFile(templatePath, "utf-8");
+//         const html = ejs.render(template, { protocol, host, booking: bookingData });
+
+//         const browser = await puppeteer.launch({ headless: "new" });
+//         const page = await browser.newPage();
+
+//         let timeStamp = new Date().toLocaleString("id-ID", {
+//             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+//             hour: '2-digit', minute: '2-digit', second: '2-digit'
+//         });
+//         let timeZone = () => {
+//             const offset = new Date().getTimezoneOffset();
+//             if (offset === -420) return "WIB (UTC+7)";
+//             if (offset === -480) return "WITA (UTC+8)";
+//             if (offset === -540) return "WIT (UTC+9)";
+//             return "Zona Waktu Tidak Diketahui";
+//         }
+
+//         await page.setContent(html, { waitUntil: "load" });
+
+//         await page.pdf({
+//             path: outputPath,
+//             format: "A4",
+//             printBackground: true,
+//             displayHeaderFooter: true,
+//             margin: { bottom: '60px' },
+//             footerTemplate: `
+//                 <div class="footer" style="font-size:10px; text-align:center; width:100%; color: #555; line-height: 1.4;">
+//                     <p style="margin: 1px 0; line-height: 1;">Dokumen ini dibuat secara otomatis oleh sistem.</p>
+//                     <p style="margin: 1px 0; line-height: 1;">Dibuat pada: ${timeStamp} ${timeZone()}</span></p>
+//                 </div>
+//             `
+//         });
+
+//         await browser.close();
+
+//         return relativePath;
+//     } catch (error) {
+//         console.error("❌ Error generating PDF:", error);
+//         throw new Error("Gagal membuat bukti pemesanan.");
+//     }
+// }
+
+const generatePDF = async (protocol, host, bookingData, bookingCode) => {
     try {
         const templatePath = path.join(__dirname, "..", "views", "templates", "bukti-pemesanan-pdf.ejs");
         const rootPath = path.resolve(__dirname, "..");
@@ -489,9 +543,6 @@ async function generatePDF(protocol, host, bookingData, bookingCode) {
 
         const template = await fs.readFile(templatePath, "utf-8");
         const html = ejs.render(template, { protocol, host, booking: bookingData });
-
-        const browser = await puppeteer.launch({ headless: "new" });
-        const page = await browser.newPage();
 
         let timeStamp = new Date().toLocaleString("id-ID", {
             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
@@ -505,25 +556,27 @@ async function generatePDF(protocol, host, bookingData, bookingCode) {
             return "Zona Waktu Tidak Diketahui";
         }
 
-        await page.setContent(html, { waitUntil: "load" });
-
-        await page.pdf({
-            path: outputPath,
-            format: "A4",
-            printBackground: true,
-            displayHeaderFooter: true,
-            margin: { bottom: '60px' },
-            footerTemplate: `
-                <div class="footer" style="font-size:10px; text-align:center; width:100%; color: #555; line-height: 1.4;">
-                    <p style="margin: 1px 0; line-height: 1;">Dokumen ini dibuat secara otomatis oleh sistem.</p>
-                    <p style="margin: 1px 0; line-height: 1;">Dibuat pada: ${timeStamp} ${timeZone()}</span></p>
-                </div>
-            `
+        return new Promise((resolve, reject) => {
+            pdf.create(html, {
+                format: "A4",
+                border: "10mm",
+                footer: {
+                    height: "5mm",
+                    contents: `
+                        <div style="font-size:10px; text-align:center; width:100%; color: #555; line-height: 1.4;">
+                            <p style="margin: 1px 0; line-height: 1;">Dokumen ini dibuat secara otomatis oleh sistem.</p>
+                            <p style="margin: 1px 0; line-height: 1;">Dibuat pada: ${timeStamp} ${timeZone()}</p>
+                        </div>
+                    `
+                }
+            }).toFile(outputPath, (err, res) => {
+                if (err) {
+                    reject("Gagal membuat PDF");
+                } else {
+                    resolve(relativePath);
+                }
+            });
         });
-
-        await browser.close();
-
-        return relativePath;
     } catch (error) {
         console.error("❌ Error generating PDF:", error);
         throw new Error("Gagal membuat bukti pemesanan.");
