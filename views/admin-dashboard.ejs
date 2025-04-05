@@ -45,7 +45,7 @@
                 <div class="chart-container">
                     <canvas id="chart<%= block.block_name %>"></canvas>
                 </div>
-                <div class="chart-info">
+                <div class="chart-info" id="chartInfo<%= block.block_name %>">
                     <p>Kuota: <%= block.max %> seat</p>
                     <p>Terisi: <%= block.booked %> seat (<%= isNaN(((block.booked / block.max) * 100).toFixed(2)) ? 0 : ((block.booked / block.max) * 100).toFixed(2) %>%)</p>
                     <p>Tersisa: <%= block.max - block.booked %> seat</p>
@@ -156,6 +156,15 @@
                             <option value="Umum">Umum</option>
                         </select>
                     </div>
+            
+                    <div class="col">
+                        <label for="filterStatus" class="form-label">Status Peserta:</label>
+                        <select id="filterStatus" class="select2 form-control">
+                            <option value="active">Aktif</option>
+                            <option value="deleted">Terhapus</option>
+                            <option value="all">Semua</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -177,6 +186,8 @@
                         <th>Umur</th>
                         <th>No. WhatsApp</th>
                         <th>Kategori</th>
+                        <th>Kode Pemesanan</th>
+                        <th>Status</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -259,45 +270,162 @@
      * The tooltip shows the label and the raw value in the format "Terisi: X seat" or "Sisa: X seat".
      */-->
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const seatData = JSON.parse('<%- JSON.stringify(seatData) %>');
+        // Simpan chart instance agar bisa di-destroy sebelum buat baru
+        let charts = {};
 
-            Object.keys(seatData).forEach(key => {
-                const block = seatData[key];
-                const canvasElement = document.getElementById(`chart${block.block_name}`);
-                
-                if (!canvasElement) {
-                    console.warn(`Canvas not found for block: ${block.block_name}`);
-                    return;
-                }
+        function getUpdatedSeatData() {
+            $.ajax({
+                url: '/admin/get-seat-data',
+                type: 'GET',
+                success: function (response) {
+                    const seatData = response;
 
-                const ctx = canvasElement.getContext('2d');
-                new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        labels: ['Terisi', 'Sisa'],
-                        datasets: [{
-                            data: [block.booked, block.max - block.booked],
-                            backgroundColor: ['#36A2EB', '#FFCE56'],
-                            hoverOffset: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: { position: 'bottom' },
-                            tooltip: {
-                                callbacks: {
-                                    label: function (context) {
-                                        return `${context.label}: ${context.raw} seat`;
+                    Object.keys(seatData).forEach(key => {
+                        let block = seatData[key];
+                        const canvasElement = document.getElementById(`chart${block.block_name}`);
+
+                        if (!canvasElement) {
+                        console.warn(`Canvas not found for block: ${block.block_name}`);
+                        return;
+                        }
+
+                        // Destroy chart lama jika sudah ada
+                        if (charts[block.block_name]) {
+                        charts[block.block_name].destroy();
+                        }
+
+                        const ctx = canvasElement.getContext('2d');
+                        charts[block.block_name] = new Chart(ctx, {
+                            type: 'pie',
+                            data: {
+                                labels: ['Terisi', 'Sisa'],
+                                datasets: [{
+                                data: [block.booked, block.max - block.booked],
+                                backgroundColor: ['#36A2EB', '#FFCE56'],
+                                hoverOffset: 4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: { position: 'bottom' },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function (context) {
+                                                return `${context.label}: ${context.raw} seat`;
+                                            }
+                                        }
                                     }
                                 }
                             }
+                        });
+
+                        // Update chart-info HTML
+                        const chartInfoEl = document.getElementById(`chartInfo${block.block_name}`);
+                        if (chartInfoEl) {
+                            const percentage = block.max > 0 ? ((block.booked / block.max) * 100).toFixed(2) : 0;
+                            chartInfoEl.innerHTML = `
+                                <p>Kuota: ${block.max} seat</p>
+                                <p>Terisi: ${block.booked} seat (${percentage}%)</p>
+                                <p>Tersisa: ${block.max - block.booked} seat</p>
+                            `;
                         }
-                    }
-                });
+
+                    });
+                }
             });
+        }
+
+
+
+        // Fungsi untuk menginisialisasi chart
+        // function initChart() {
+        //     // Inisialisasi chart
+        //     Object.keys(seatData).forEach(key => {
+        //         const block = seatData[key];
+        //         const canvasElement = document.getElementById(`chart${block.block_name}`);
+        
+        //         if (!canvasElement) {
+        //             console.warn(`Canvas not found for block: ${block.block_name}`);
+        //             return;
+        //         }
+        
+        //         const ctx = canvasElement.getContext('2d');
+        //         const chart = new Chart(ctx, {
+        //             type: 'pie',
+        //             data: {
+        //                 labels: ['Terisi', 'Sisa'],
+        //                 datasets: [{
+        //                     data: [block.booked, block.max - block.booked],
+        //                     backgroundColor: ['#36A2EB', '#FFCE56'],
+        //                     hoverOffset: 4
+        //                 }]
+        //             },
+        //             options: {
+        //                 responsive: true,
+        //                 plugins: {
+        //                     legend: { position: 'bottom' },
+        //                     tooltip: {
+        //                         callbacks: {
+        //                             label: function (context) {
+        //                                 return `${context.label}: ${context.raw} seat`;
+        //                             }
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         });
+        //     });
+        
+        //     // Panggil fungsi getUpdatedSeatData setelah chart sudah selesai diinisialisasi
+        //     getUpdatedSeatData();
+        // }
+        
+        // Panggil fungsi initChart ketika halaman sudah selesai dimuat
+        document.addEventListener("DOMContentLoaded", function() {
+            // initChart();
+            getUpdatedSeatData();
         });
+
+        // document.addEventListener("DOMContentLoaded", function() {
+        //     const seatData = JSON.parse('<%- JSON.stringify(seatData) %>');
+
+        //     Object.keys(seatData).forEach(key => {
+        //         const block = seatData[key];
+        //         const canvasElement = document.getElementById(`chart${block.block_name}`);
+                
+        //         if (!canvasElement) {
+        //             console.warn(`Canvas not found for block: ${block.block_name}`);
+        //             return;
+        //         }
+
+        //         const ctx = canvasElement.getContext('2d');
+        //         new Chart(ctx, {
+        //             type: 'pie',
+        //             data: {
+        //                 labels: ['Terisi', 'Sisa'],
+        //                 datasets: [{
+        //                     data: [block.booked, block.max - block.booked],
+        //                     backgroundColor: ['#36A2EB', '#FFCE56'],
+        //                     hoverOffset: 4
+        //                 }]
+        //             },
+        //             options: {
+        //                 responsive: true,
+        //                 plugins: {
+        //                     legend: { position: 'bottom' },
+        //                     tooltip: {
+        //                         callbacks: {
+        //                             label: function (context) {
+        //                                 return `${context.label}: ${context.raw} seat`;
+        //                             }
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         });
+        //     });
+        // });
     </script>
 
     <!-- Event Listener for distrik and asalSidang on the Edit Modal -->
@@ -364,6 +492,7 @@
                         d.sidang_jemaat = $('#filterJemaat').val();
                         d.block = $('#filterBlok').val();
                         d.category = $('#filterKategori').val();
+                        d.status = $('#filterStatus').val();
                     }
                 },
                 "columns": [
@@ -403,13 +532,43 @@
                         "data": "category", 
                         "visible": true 
                     },
-                    { 
+                    {
+                        "data": "booking_code", 
+                        "visible": true 
+                    },
+                    {
+                        "data": "deleted_at", 
+                        "visible": true,
+                        render: function (data, type, row) {
+                            if (data === null) {
+                                return 'Aktif';
+                            } else {
+                                let date = new Date(data);
+                                let day = date.getDate().toString().padStart(2, '0');
+                                let month = (date.getMonth() + 1).toString().padStart(2, '0');
+                                let year = date.getFullYear();
+                                let hours = date.getHours().toString().padStart(2, '0');
+                                let minutes = date.getMinutes().toString().padStart(2, '0');
+                                let seconds = date.getSeconds().toString().padStart(2, '0');
+
+                                return 'Dihapus pada ' + `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+                            }
+                        }
+                    },
+                    {
                         "data": "id",
                         "render": function (data, type, row) {
-                            return `
-                                <button class="btn-edit" data-id="${data}">Edit</button>
-                                <button class="btn-delete" data-id="${data}">Hapus</button>
-                            `;
+                            if (row.deleted_at === null) {
+                                return `
+                                    <button class="btn-edit" data-id="${data}">Edit</button>
+                                    <button class="btn-delete" data-id="${data}">Hapus</button>
+                                `;
+                            } else {
+                                return `
+                                    <button class="btn-edit" data-id="${data}">Edit</button>
+                                    <button class="btn-restore" data-id="${data}">Restore</button>
+                                `;
+                            }
                         }
                     }
                 ],
@@ -540,7 +699,12 @@
                 width: '100%'
             });
 
-            $('#filterDistrik, #filterJemaat, #filterBlok, #filterKategori').on('change', function () {
+            $('#filterStatus').select2({
+                placeholder: "Pilih Status",
+                width: '100%'
+            });
+
+            $('#filterDistrik, #filterJemaat, #filterBlok, #filterKategori, #filterStatus').on('change', function () {
                 bookingTable.ajax.reload();
             });
 
@@ -653,6 +817,8 @@
                         success: function (response) {
                             alert('Data berhasil dihapus!');
                             bookingTable.ajax.reload(null, false);
+
+                            getUpdatedSeatData();
                         },
                         error: function (err) {
                             console.error('Gagal menghapus data:', err);
@@ -662,6 +828,26 @@
                 }
             });
 
+            $('#bookingTable').on('click', '.btn-restore', function () {
+                let bookingId = $(this).data('id');
+
+                if (confirm('Apakah Anda yakin ingin mengaktifkan data ini?')) {
+                    $.ajax({
+                        url: `/admin/restore-deleted-booking/${bookingId}`,
+                        type: 'POST',
+                        success: function (response) {
+                            alert('Data berhasil diaktifkan!');
+                            bookingTable.ajax.reload(null, false);
+
+                            getUpdatedSeatData();
+                        },
+                        error: function (err) {
+                            console.error('Gagal mengaktifkan data:', err.responseJSON);
+                            alert(`Gagal mengaktifkan data:\n${err.responseJSON.message}`);
+                        }
+                    });
+                }
+            });
         });
     </script>
 

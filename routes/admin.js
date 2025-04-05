@@ -49,6 +49,7 @@ router.get('/', isAuthenticated, (req, res) => {
             COALESCE(SUM(bookings.num_seats), 0) AS booked
         FROM blocks
         LEFT JOIN bookings ON bookings.block_id = blocks.id
+        WHERE bookings.deleted_at IS NULL
         GROUP BY blocks.id
     `;
     const distrikQuery = 'SELECT id, nama_distrik FROM distrik';
@@ -62,6 +63,7 @@ router.get('/', isAuthenticated, (req, res) => {
         JOIN distrik ON distrik.id = bookings.distrik_id
         JOIN sidang_jemaat ON sidang_jemaat.id = bookings.sidang_jemaat_id
         JOIN blocks ON blocks.id = bookings.block_id
+        WHERE bookings.deleted_at IS NULL
         ORDER BY bookings.id DESC
     `;
 
@@ -242,6 +244,51 @@ router.delete('/delete-booking/:id', isAuthenticated, async (req, res) => {
     }
 });
 
+router.post('/restore-deleted-booking/:id', isAuthenticated, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!id || isNaN(id)) {
+            return res.status(400).json({ success: false, message: 'ID tidak valid.' });
+        }
+
+        const seatCheckQuery = `
+            SELECT
+                bookings.block_id,
+                blocks.block_name,
+                (
+                    blocks.seat_limit - (
+                        SELECT COALESCE(SUM(b.num_seats), 0)
+                        FROM bookings b
+                        WHERE
+                            b.block_id = bookings.block_id
+                            AND b.deleted_at IS NULL
+                    )
+                ) AS available_seats
+            FROM bookings
+            JOIN blocks ON bookings.block_id = blocks.id
+            WHERE
+                bookings.id = ?
+        `;
+        const seatCheckResult = await query(seatCheckQuery, [id]);
+
+        if (seatCheckResult.length === 0 || seatCheckResult[0].available_seats <= 0) {
+            return res.status(400).json({ success: false, message: `Seat untuk Blok ${seatCheckResult[0].block_name} sudah tidak tersedia untuk pengaktifan kembali.` });
+        }
+
+        const queryText = 'UPDATE bookings SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL';
+        const result = await query(queryText, [id]);
+
+        if (result.affectedRows > 0) {
+            return res.json({ success: true, message: 'Data berhasil diaktifkan (soft delete).' });
+        } else {
+            return res.status(404).json({ success: false, message: 'Data tidak ditemukan atau sudah diaktifkan sebelumnya.' });
+        }
+    } catch (error) {
+        console.error('Error activating booking:', error);
+        return res.status(500).json({ success: false, message: 'Gagal mengaktifkan data.', error: error.message });
+    }
+});
 
 /**
  * Handles GET request to '/export-excel' endpoint.
@@ -302,6 +349,7 @@ router.get("/booking-datatable", isAuthenticated, async (req, res) => {
         let sidangFilter = req.query.sidang_jemaat || "";
         let blockFilter = req.query.block || "";
         let categoryFilter = req.query.category || "";
+        let statusFilter = req.query.status || "";
 
         let whereClause = "WHERE 1=1";
         let params = [];
@@ -314,8 +362,10 @@ router.get("/booking-datatable", isAuthenticated, async (req, res) => {
                     OR sidang_jemaat.nama_sidang LIKE ?
                     OR blocks.block_name LIKE ?
                     OR bookings.category LIKE ?
+                    OR bookings.booking_code LIKE ?
                 )`;
             params.push(
+                `%${searchValue}%`, 
                 `%${searchValue}%`, 
                 `%${searchValue}%`, 
                 `%${searchValue}%`, 
@@ -323,8 +373,6 @@ router.get("/booking-datatable", isAuthenticated, async (req, res) => {
                 `%${searchValue}%`
             );
         }
-
-        whereClause += " AND bookings.deleted_at IS NULL";
 
         if (distrikFilter) {
             whereClause += " AND distrik.id = ?";
@@ -344,6 +392,19 @@ router.get("/booking-datatable", isAuthenticated, async (req, res) => {
         if (categoryFilter) {
             whereClause += " AND bookings.category = ?";
             params.push(categoryFilter);
+        }
+
+        if (statusFilter) {
+            switch (statusFilter) {
+                case "active":
+                    whereClause += " AND bookings.deleted_at IS NULL";
+                    break;
+                case "deleted":
+                    whereClause += " AND bookings.deleted_at IS NOT NULL";
+                    break;
+                default:
+                    break;
+            }
         }
 
         /** 
@@ -379,7 +440,9 @@ router.get("/booking-datatable", isAuthenticated, async (req, res) => {
                 bookings.class,
                 bookings.age,
                 bookings.whatsapp,
-                bookings.category
+                bookings.category,
+                bookings.booking_code,
+                bookings.deleted_at
             FROM bookings
             JOIN distrik ON distrik.id = bookings.distrik_id
             JOIN sidang_jemaat ON sidang_jemaat.id = bookings.sidang_jemaat_id
@@ -497,6 +560,46 @@ router.get("/booking-detail-datatable", isAuthenticated, async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Terjadi kesalahan pada server." });
+    }
+});
+
+/**
+ * Handles GET request to '/get-seat-data' endpoint.
+ * This route requires user authentication.
+ * Returns JSON response with available seat data.
+ *
+ * @param {import('express').Request} req - The HTTP request object.
+ * @param {import('express').Response} res - The HTTP response object.
+ */
+router.get('/get-seat-data', isAuthenticated, async (req, res) => {
+    try {
+        const blockQuery = `
+            SELECT 
+                blocks.id,
+                blocks.block_name,
+                blocks.seat_limit,
+                COALESCE(SUM(bookings.num_seats), 0) AS booked
+            FROM blocks
+            LEFT JOIN bookings ON blocks.id = bookings.block_id
+            WHERE bookings.deleted_at IS NULL
+            GROUP BY blocks.id, blocks.block_name, blocks.seat_limit
+        `;
+
+        const result = await query(blockQuery);
+
+        const seatData = result.map((block) => {
+            return {
+                block_name: block.block_name,
+                max: block.seat_limit,
+                booked: block.booked,
+                available: block.seat_limit - block.booked,
+            };
+        });
+
+        res.json(seatData);
+    } catch (error) {
+        console.error('Error fetching seat data:', error);
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
 });
 
