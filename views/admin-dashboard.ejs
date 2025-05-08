@@ -103,9 +103,10 @@
                         <th>Distrik</th>
                         <th>Sidang Jemaat</th>
                         <th>Blok</th>
-                        <th>Jumlah Kursi</th>
+                        <th>Kursi</th>
                         <th>Waktu Pemesanan</th>
-                        <th>Dokumen</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -468,17 +469,20 @@
                     {
                         "data": "id",
                         "render": function (data, type, row) {
-                            if (row.deleted_at === null) {
-                                return `
-                                    <button class="btn-edit" data-id="${data}">Edit</button>
-                                    <button class="btn-delete" data-id="${data}">Hapus</button>
-                                `;
-                            } else {
-                                return `
-                                    <button class="btn-edit" data-id="${data}">Edit</button>
-                                    <button class="btn-restore" data-id="${data}">Restore</button>
-                                `;
-                            }
+                            return `
+                                <button class="btn-edit" data-id="${data}">Edit</button>
+                            `;
+                            // if (row.deleted_at === null) {
+                            //     return `
+                            //         <button class="btn-edit" data-id="${data}">Edit</button>
+                            //         <button class="btn-delete" data-id="${data}">Hapus</button>
+                            //     `;
+                            // } else {
+                            //     return `
+                            //         <button class="btn-edit" data-id="${data}">Edit</button>
+                            //         <button class="btn-restore" data-id="${data}">Restore</button>
+                            //     `;
+                            // }
                         }
                     }
                 ],
@@ -554,10 +558,39 @@
                         },
                         "visible": true 
                     },
+                    {
+                        "data": "deleted_at", 
+                        "visible": true,
+                        render: function (data, type, row) {
+                            if (data === null) {
+                                return 'Aktif';
+                            } else {
+                                let date = new Date(data);
+                                let day = date.getDate().toString().padStart(2, '0');
+                                let month = (date.getMonth() + 1).toString().padStart(2, '0');
+                                let year = date.getFullYear();
+                                let hours = date.getHours().toString().padStart(2, '0');
+                                let minutes = date.getMinutes().toString().padStart(2, '0');
+                                let seconds = date.getSeconds().toString().padStart(2, '0');
+
+                                return 'Dihapus pada ' + `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+                            }
+                        }
+                    },
                     { 
                         "data": "booking_code",
                         "render": function (data, type, row) {
-                            return `<div style="text-align: center;"><a href="/booking/download-booking-pdf/${data}" class="btn-download" data-id="${data}"><i class="fas fa-download"></i></a></div>`;
+                            if (row.deleted_at === null) {
+                                return `
+                                    <div style="text-align: center;"><a href="/booking/download-booking-pdf/${data}" class="btn-download" data-id="${data}"><i class="fas fa-download"></i></a></div>
+                                    <button class="btn-delete" data-id="${data}">Hapus</button>
+                                `;
+                            } else {
+                                return `
+                                    <div style="text-align: center;"><a href="/booking/download-booking-pdf/${data}" class="btn-download" data-id="${data}"><i class="fas fa-download"></i></a></div>
+                                    <button class="btn-restore" data-id="${data}">Restore</button>
+                                `;
+                            }
                         }
                     }
                 ],
@@ -732,7 +765,7 @@
                         },
                         error: function (err) {
                             console.error('Gagal menghapus data:', err);
-                            alert('Terjadi kesalahan, coba lagi!');
+                            alert('Gagal menghapus data: \n' + err.responseJSON.message);
                         }
                     });
                 }
@@ -754,6 +787,50 @@
                         error: function (err) {
                             console.error('Gagal mengaktifkan data:', err.responseJSON);
                             alert(`Gagal mengaktifkan data:\n${err.responseJSON.message}`);
+                        }
+                    });
+                }
+            });
+
+            $('#bookingDetailTable').on('click', '.btn-delete', function () {
+                let booking_code = $(this).data('id');
+
+                if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+                    $.ajax({
+                        url: `/admin/delete-booking-detail/${booking_code}`,
+                        type: 'DELETE',
+                        success: function (response) {
+                            alert('Data berhasil dihapus!');
+                            bookingDetailTable.ajax.reload(null, false);
+                            bookingTable.ajax.reload(null, false);
+
+                            getUpdatedSeatData();
+                        },
+                        error: function (err) {
+                            console.error('Gagal menghapus data:', err);
+                            alert('Gagal menghapus data: \n' + err.responseJSON.message);
+                        }
+                    });
+                }
+            });
+
+            $('#bookingDetailTable').on('click', '.btn-restore', function () {
+                let booking_code = $(this).data('id');
+
+                if (confirm('Apakah Anda yakin ingin mengaktifkan data ini?')) {
+                    $.ajax({
+                        url: `/admin/restore-deleted-booking-detail/${booking_code}`,
+                        type: 'POST',
+                        success: function (response) {
+                            alert('Data berhasil diaktifkan!');
+                            bookingDetailTable.ajax.reload(null, false);
+                            bookingTable.ajax.reload(null, false);
+
+                            getUpdatedSeatData();
+                        },
+                        error: function (err) {
+                            console.error('Gagal mengaktifkan data:', err);
+                            alert('Gagal mengaktifkan data: \n' + err.responseJSON.message);
                         }
                     });
                 }

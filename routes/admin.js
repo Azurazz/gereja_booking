@@ -4,6 +4,9 @@ const db = require('../models/db');
 const ExcelJS = require('exceljs');
 
 const router = express.Router();
+const beginTransaction = util.promisify(db.beginTransaction).bind(db);
+const commit = util.promisify(db.commit).bind(db);
+const rollback = util.promisify(db.rollback).bind(db);
 const query = util.promisify(db.query).bind(db);
 
 /**
@@ -46,11 +49,14 @@ router.get('/', isAuthenticated, (req, res) => {
             blocks.block_name,
             blocks.gedung,
             blocks.seat_limit AS max,
-            COALESCE(SUM(bookings.num_seats), 0) AS booked
+            (
+					SELECT COALESCE(SUM(bookings.num_seats), 0)
+                    FROM bookings
+                    WHERE 
+						bookings.deleted_at IS NULL
+                        AND bookings.block_id = blocks.id
+                ) booked
         FROM blocks
-        LEFT JOIN bookings ON bookings.block_id = blocks.id
-        WHERE bookings.deleted_at IS NULL
-        GROUP BY blocks.id
     `;
     const distrikQuery = 'SELECT id, nama_distrik FROM distrik';
     const bookingListQuery = `
@@ -474,6 +480,7 @@ router.get("/booking-detail-datatable", isAuthenticated, async (req, res) => {
         let distrikFilter = req.query.distrik || "";
         let sidangFilter = req.query.sidang_jemaat || "";
         let blockFilter = req.query.block || "";
+        let statusFilter = req.query.status || "";
 
         let whereClause = "WHERE 1=1";
         let params = [];
@@ -509,6 +516,19 @@ router.get("/booking-detail-datatable", isAuthenticated, async (req, res) => {
             params.push(blockFilter);
         }
 
+        if (statusFilter) {
+            switch (statusFilter) {
+                case "active":
+                    whereClause += " AND booking_details.deleted_at IS NULL";
+                    break;
+                case "deleted":
+                    whereClause += " AND booking_details.deleted_at IS NOT NULL";
+                    break;
+                default:
+                    break;
+            }
+        }
+
         /** 
          * Query to get total data without filter
          */
@@ -540,7 +560,8 @@ router.get("/booking-detail-datatable", isAuthenticated, async (req, res) => {
                 sidang_jemaat.nama_sidang,
                 blocks.block_name,
                 booking_details.num_seats,
-                booking_details.created_at
+                booking_details.created_at,
+                booking_details.deleted_at
             FROM booking_details
             JOIN distrik ON distrik.id = booking_details.distrik_id
             JOIN sidang_jemaat ON sidang_jemaat.id = booking_details.sidang_jemaat_id
@@ -578,11 +599,14 @@ router.get('/get-seat-data', isAuthenticated, async (req, res) => {
                 blocks.id,
                 blocks.block_name,
                 blocks.seat_limit,
-                COALESCE(SUM(bookings.num_seats), 0) AS booked
+                (
+					SELECT COALESCE(SUM(bookings.num_seats), 0)
+                    FROM bookings
+                    WHERE 
+						bookings.deleted_at IS NULL
+                        AND bookings.block_id = blocks.id
+                ) booked
             FROM blocks
-            LEFT JOIN bookings ON blocks.id = bookings.block_id
-            WHERE bookings.deleted_at IS NULL
-            GROUP BY blocks.id, blocks.block_name, blocks.seat_limit
         `;
 
         const result = await query(blockQuery);
@@ -600,6 +624,104 @@ router.get('/get-seat-data', isAuthenticated, async (req, res) => {
     } catch (error) {
         console.error('Error fetching seat data:', error);
         res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
+});
+
+router.delete('/delete-booking-detail/:booking_code', isAuthenticated, async (req, res) => {
+    try {
+        const { booking_code } = req.params;
+
+        if (!booking_code || typeof booking_code !== 'string') {
+            return res.status(400).json({ success: false, message: 'Booking Code tidak valid.' });
+        }
+
+        await beginTransaction();
+
+        const bookingDetailsQueryText = `
+            UPDATE booking_details SET deleted_at = NOW() WHERE booking_code = ? AND deleted_at IS NULL;
+        `;
+        const bookingsQueryText = `
+            UPDATE bookings SET deleted_at = NOW() WHERE booking_code = ? AND deleted_at IS NULL;
+        `;
+
+        const bookingDetailsResult = await query(bookingDetailsQueryText, [booking_code]);
+        const bookingsResult = await query(bookingsQueryText, [booking_code]);
+
+        if (bookingDetailsResult.affectedRows > 0 && bookingsResult.affectedRows > 0) {
+            await commit();
+            return res.json({ success: true, message: 'Data berhasil dihapus (soft delete).' });
+        } else {
+            await rollback();
+            return res.status(404).json({ success: false, message: 'Data tidak ditemukan atau sudah dihapus sebelumnya.' });
+        }
+    } catch (error) {
+        await rollback();
+        console.error('Error deleting booking:', error);
+        return res.status(500).json({ success: false, message: 'Gagal menghapus data.', error: error.message });
+    }
+});
+
+router.post('/restore-deleted-booking-detail/:booking_code', isAuthenticated, async (req, res) => {
+    try {
+        const { booking_code } = req.params;
+
+        if (!booking_code || typeof booking_code !== 'string') {
+            return res.status(400).json({ success: false, message: 'Booking Code tidak valid.' });
+        }
+
+        await beginTransaction();
+
+        const seatCheckQuery = `
+            SELECT
+                bookings.block_id,
+                blocks.block_name,
+                (
+                    blocks.seat_limit - (
+                        SELECT COALESCE(SUM(b.num_seats), 0)
+                        FROM bookings b
+                        WHERE
+                            b.block_id = bookings.block_id
+                            AND b.deleted_at IS NULL
+                    )
+                ) AS available_seats
+            FROM bookings
+            JOIN blocks ON bookings.block_id = blocks.id
+            WHERE
+                bookings.booking_code = ?
+        `;
+        const seatCheckResult = await query(seatCheckQuery, [booking_code]);
+
+        if (seatCheckResult.length === 0 || seatCheckResult[0].available_seats <= 0) {
+            await rollback();
+            return res.status(400).json({ success: false, message: `Seat untuk Blok ${seatCheckResult[0].block_name} sudah tidak tersedia untuk pengaktifan kembali.` });
+        }
+
+        const bookingDetailsQueryText = `
+            UPDATE booking_details SET deleted_at = NULL WHERE booking_code = ? AND deleted_at IS NOT NULL;
+        `;
+        const bookingsQueryText = `
+            UPDATE bookings SET deleted_at = NULL WHERE booking_code = ? AND deleted_at IS NOT NULL;
+        `;
+
+        const bookingDetailsResult = await query(bookingDetailsQueryText, [booking_code]);
+        const bookingsResult = await query(bookingsQueryText, [booking_code]);
+
+        if (bookingDetailsResult.affectedRows > 0 && bookingsResult.affectedRows > 0) {
+            if (seatCheckResult[0].available_seats < bookingsResult.affectedRows) {
+                await rollback();
+                return res.status(400).json({ success: false, message: `Seat untuk Blok ${seatCheckResult[0].block_name} sudah tidak tersedia untuk pengaktifan kembali.` });
+            }
+
+            await commit();
+            return res.json({ success: true, message: 'Data berhasil diaktifkan (soft delete).' });
+        } else {
+            await rollback();
+            return res.status(404).json({ success: false, message: 'Data tidak ditemukan atau sudah diaktifkan sebelumnya.' });
+        }
+    } catch (error) {
+        await rollback();
+        console.error('Error activating booking:', error);
+        return res.status(500).json({ success: false, message: 'Gagal mengaktifkan data.', error: error.message });
     }
 });
 
