@@ -328,10 +328,40 @@ router.get('/export-excel', isAuthenticated, (req, res) => {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Data Booking');
     
-        worksheet.addRow(['Booking ID', 'Nama', 'Distrik', 'Sidang Jemaat', 'Kelas', 'Umur', 'WhatsApp', 'Kategori', 'Blok', 'Jumlah Kursi']);
+        worksheet.addRow([
+            'Booking ID', 
+            'Nama', 
+            'Distrik', 
+            'Sidang Jemaat', 
+            'Kelas', 
+            'Umur', 
+            'WhatsApp', 
+            'Kategori', 
+            'Blok', 
+            'Jumlah Kursi',
+            'Booking Kode',
+            'Created At',
+            'Updated At',
+            'Deleted At'
+        ]);
     
         bookings.forEach((booking) => {
-            worksheet.addRow([booking.id, booking.name, booking.nama_distrik, booking.nama_sidang, booking.class, booking.age, booking.whatsapp, booking.category, booking.block_name, booking.num_seats]);
+            worksheet.addRow([
+                booking.id, 
+                booking.name, 
+                booking.nama_distrik, 
+                booking.nama_sidang, 
+                booking.class, 
+                booking.age, 
+                booking.whatsapp, 
+                booking.category, 
+                booking.block_name, 
+                booking.num_seats,
+                booking.booking_code,
+                booking.created_at,
+                booking.updated_at,
+                booking.deleted_at
+            ]);
         });
     
         workbook.xlsx.writeBuffer().then((buffer) => {
@@ -706,7 +736,7 @@ router.post('/restore-deleted-booking-detail/:booking_code', isAuthenticated, as
 
             if (checkBookingDetailsResult[0].count > 0) {
                 await rollback();
-                return res.status(400).json({ success: false, message: `Sidang Jemaat ${getBookingDetailsResult[0].nama_sidang} sudah booking di gedung ${getBookingDetailsResult[0].gedung} dengan Booking Code ${booking_code}.` });
+                return res.status(400).json({ success: false, message: `Sidang Jemaat ${getBookingDetailsResult[0].nama_sidang} sudah booking di gedung ${getBookingDetailsResult[0].gedung}.` });
             }
         }
 
