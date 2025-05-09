@@ -62,7 +62,7 @@ const getSeatInfo = async (gedung = null, block_id = null) => {
  */
 router.get('/hastina', async (req, res) => {
     try {
-        const distrikQuery = 'SELECT * FROM distrik';
+        const distrikQuery = 'SELECT * FROM distrik ORDER BY nama_distrik ASC';
         const [seatData, distrikResults] = await Promise.all([
             getSeatInfo('Hastinapura'),
             new Promise((resolve, reject) => {
@@ -151,15 +151,19 @@ router.get('/asal-sidang/:distrikId', async (req, res) => {
                 AND id NOT IN (
                     SELECT sidang_jemaat_id 
                     FROM bookings 
-                    WHERE block_id IN (
-                        SELECT id 
-                        FROM blocks 
-                        WHERE gedung = ?
-                    )
+                    WHERE 
+                        block_id IN (
+                            SELECT id 
+                            FROM blocks 
+                            WHERE gedung = ?
+                        )
+                        AND bookings.deleted_at IS NULL
                 )
             `;
             queryParams.push(gedung);
         }
+
+        queryJemaat += `ORDER BY nama_sidang ASC`
 
         let jemaatList = await query(queryJemaat, queryParams);
 
@@ -478,7 +482,6 @@ router.get("/download-booking-pdf/:bookingCode", async (req, res) => {
         res.status(500).json({ message: "Terjadi kesalahan di server" });
     }
 });
-
 const generatePDF = async (protocol, host, bookingData, bookingCode) => {
     try {
         const templatePath = path.join(__dirname, "..", "views", "templates", "bukti-pemesanan-pdf.ejs");

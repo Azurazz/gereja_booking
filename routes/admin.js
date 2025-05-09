@@ -50,12 +50,12 @@ router.get('/', isAuthenticated, (req, res) => {
             blocks.gedung,
             blocks.seat_limit AS max,
             (
-					SELECT COALESCE(SUM(bookings.num_seats), 0)
-                    FROM bookings
-                    WHERE 
-						bookings.deleted_at IS NULL
-                        AND bookings.block_id = blocks.id
-                ) booked
+                SELECT COALESCE(SUM(bookings.num_seats), 0)
+                FROM bookings
+                WHERE 
+                    bookings.deleted_at IS NULL
+                    AND bookings.block_id = blocks.id
+            ) booked
         FROM blocks
     `;
     const distrikQuery = 'SELECT id, nama_distrik FROM distrik';
@@ -670,6 +670,45 @@ router.post('/restore-deleted-booking-detail/:booking_code', isAuthenticated, as
         }
 
         await beginTransaction();
+
+        const getBookingDetailsQueryText = `
+            SELECT
+                booking_details.id,
+                booking_details.booking_code,
+                booking_details.sidang_jemaat_id,
+                sidang_jemaat.nama_sidang,
+                blocks.gedung
+            FROM booking_details
+            LEFT JOIN sidang_jemaat ON sidang_jemaat.id = booking_details.sidang_jemaat_id
+            LEFT JOIN blocks ON blocks.id = booking_details.block_id
+            WHERE booking_details.booking_code = ?
+            LIMIT 1
+        `;
+        const getBookingDetailsResult = await query(getBookingDetailsQueryText, [booking_code]);
+
+        if (getBookingDetailsResult.length === 0) {
+            await rollback();
+            return res.status(404).json({ success: false, message: `Data dengan Booking Code ${booking_code} tidak ditemukan.` });
+        }
+
+        if (getBookingDetailsResult[0].gedung === 'Hastinapura') {
+            const checkBookingDetailsQueryText = `
+                SELECT
+                    COUNT(*) AS count
+                FROM booking_details
+                LEFT JOIN blocks ON blocks.id = booking_details.block_id
+                WHERE
+                    sidang_jemaat_id = ?
+                    AND deleted_at IS NULL
+                    AND gedung = ?
+            `;
+            const checkBookingDetailsResult = await query(checkBookingDetailsQueryText, [getBookingDetailsResult[0].sidang_jemaat_id, getBookingDetailsResult[0].gedung]);
+
+            if (checkBookingDetailsResult[0].count > 0) {
+                await rollback();
+                return res.status(400).json({ success: false, message: `Sidang Jemaat ${getBookingDetailsResult[0].nama_sidang} sudah booking di gedung ${getBookingDetailsResult[0].gedung} dengan Booking Code ${booking_code}.` });
+            }
+        }
 
         const seatCheckQuery = `
             SELECT
