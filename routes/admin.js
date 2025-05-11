@@ -381,6 +381,7 @@ router.get("/booking-datatable", isAuthenticated, async (req, res) => {
         let start = parseInt(req.query.start) || 0;
         let length = parseInt(req.query.length) || 10;
         let searchValue = req.query.search?.value || "";
+
         let distrikFilter = req.query.distrik || "";
         let sidangFilter = req.query.sidang_jemaat || "";
         let blockFilter = req.query.block || "";
@@ -507,6 +508,7 @@ router.get("/booking-detail-datatable", isAuthenticated, async (req, res) => {
         let start = parseInt(req.query.start) || 0;
         let length = parseInt(req.query.length) || 10;
         let searchValue = req.query.search?.value || "";
+
         let distrikFilter = req.query.distrik || "";
         let sidangFilter = req.query.sidang_jemaat || "";
         let blockFilter = req.query.block || "";
@@ -607,6 +609,113 @@ router.get("/booking-detail-datatable", isAuthenticated, async (req, res) => {
             recordsTotal: totalRecords,
             recordsFiltered: recordsFiltered,
             data: bookingDetails
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Terjadi kesalahan pada server." });
+    }
+});
+
+router.get("/booking-sidang-jemaat-datatable", isAuthenticated, async (req, res) => {
+    try {
+        let draw = req.query.draw;
+        let start = parseInt(req.query.start) || 0;
+        let length = parseInt(req.query.length) || 10;
+        let searchValue = req.query.search?.value || "";
+
+        let distrikFilter = req.query.distrik || "";
+        let sidangFilter = req.query.sidang_jemaat || "";
+
+        let whereClause = "WHERE 1=1";
+        let params = [];
+
+        if (searchValue) {
+            whereClause += ` 
+                AND (
+                    distrik.nama_distrik LIKE ?
+                    OR sidang_jemaat.nama_sidang LIKE ?
+                )`;
+            params.push(
+                `%${searchValue}%`,
+                `%${searchValue}%`
+            );
+        }
+
+        if (distrikFilter) {
+            whereClause += " AND distrik.id = ?";
+            params.push(distrikFilter);
+        }
+
+        if (sidangFilter) {
+            whereClause += " AND sidang_jemaat.id = ?";
+            params.push(sidangFilter);
+        }
+
+        /** 
+         * Query to get total data without filter
+         */
+        const totalQuery = `SELECT COUNT(*) AS total FROM sidang_jemaat`;
+        const totalResult = await query(totalQuery);
+        const totalRecords = totalResult[0].total;
+
+        /**
+         * Query to get total data after filter is applied
+         */
+        const filteredQuery = `
+            SELECT COUNT(*) AS total
+            FROM sidang_jemaat
+            LEFT JOIN distrik ON distrik.id = sidang_jemaat.id_distrik
+            ${whereClause}`;
+        const filteredResult = await query(filteredQuery, params);
+        const recordsFiltered = filteredResult[0].total;
+
+        /**
+         * Main query to get bookings data with filter and pagination
+         */
+        const dataQuery = `
+            SELECT
+                sidang_jemaat.id,
+                sidang_jemaat.nama_sidang,
+                distrik.nama_distrik,
+                coalesce(
+                    (
+                        SELECT
+                            sum(booking_details.num_seats)
+                        FROM booking_details
+                        LEFT JOIN blocks ON blocks.id = booking_details.block_id
+                        WHERE
+                            booking_details.sidang_jemaat_id = sidang_jemaat.id
+                            AND booking_details.deleted_at IS NULL
+                            AND blocks.gedung = 'Hastinapura'
+                    ), 0
+                ) AS jumlah_kursi_hastinapura,
+                coalesce(
+                    (
+                        SELECT
+                            sum(booking_details.num_seats)
+                        FROM booking_details
+                        LEFT JOIN blocks ON blocks.id = booking_details.block_id
+                        WHERE
+                            booking_details.sidang_jemaat_id = sidang_jemaat.id
+                            AND booking_details.deleted_at IS NULL
+                            AND blocks.gedung = 'Yudistira'
+                    ), 0
+                ) AS jumlah_kursi_yudistira
+            FROM sidang_jemaat
+            LEFT JOIN distrik ON distrik.id = sidang_jemaat.id_distrik
+            ${whereClause}
+            ORDER BY
+                distrik.nama_distrik ASC,
+                sidang_jemaat.nama_sidang ASC
+            LIMIT ? OFFSET ?`;
+        params.push(length, start);
+        const bookingSidangJemaat = await query(dataQuery, params);
+
+        res.json({
+            draw: draw,
+            recordsTotal: totalRecords,
+            recordsFiltered: recordsFiltered,
+            data: bookingSidangJemaat
         });
     } catch (error) {
         console.error(error);

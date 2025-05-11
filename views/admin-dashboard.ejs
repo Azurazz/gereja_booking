@@ -54,9 +54,55 @@
             <% }) %>
         </div>
 
-        <h2>Data Pemesanan</h2>
+        <!-- Pemesanan Tiap Sidang Jemaat Table Section -->
+        <h2>Data Pemesanan Yang Aktif Untuk Setiap Sidang Jemaat & Setiap Gedung</h2>
+
+        <div class="table-responsive" style="padding-bottom: 30px;">
+            <div class="container" style="width: 100%; padding: 0;">
+                <div class="row" style="display: flex; width: 100%; gap: 10px;">
+                    <div class="col">
+                        <label for="filterDistrikTabelSidang" class="form-label">Filter Distrik:</label>
+                        <select id="filterDistrikTabelSidang" class="select2 form-control">
+                            <option value="">Semua</option>
+                            <% distrikList.forEach(distrik => { %>
+                                <option value="<%= distrik.id %>"><%= distrik.nama_distrik %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+            
+                    <div class="col">
+                        <label for="filterJemaatTabelSidang" class="form-label">Filter Sidang Jemaat:</label>
+                        <select id="filterJemaatTabelSidang" class="select2 form-control" disabled>
+                            <option value="">Semua</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container" style="width: 100%; padding-left: 0; padding-right: 0;">
+                <button id="export-booking-sidang-jemaat-to-excel" type="submit" class="btn btn-success" style="padding: 8px 12px;">
+                    Export <i class="fas fa-file-excel"></i>
+                </button>
+            </div>
+
+            <table id="bookingSidangJemaatTable" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>ID Sidang Jemaat</th>
+                        <th>Sidang Jemaat</th>
+                        <th>Distrik</th>
+                        <th>Jumlah Kursi Hastinapura</th>
+                        <th>Jumlah Kursi Yudistira</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
 
         <!-- Pemesanan Table Section -->
+        <h2>Data Pemesanan</h2>
+
         <div class="table-responsive" style="padding-bottom: 30px;">
             <div class="container" style="width: 100%; padding: 0;">
                 <div class="row" style="display: flex; width: 100%; gap: 10px;">
@@ -114,9 +160,9 @@
             </table>
         </div>
 
+        <!-- Peserta Kebaktian Table Section -->
         <h2>Data Peserta Kebaktian</h2>
 
-        <!-- Peserta Kebaktian Table Section -->
         <div class="table-responsive" style="padding-bottom: 30px;">
             <div class="container" style="width: 100%; padding: 0;">
                 <div class="row" style="display: flex; width: 100%; gap: 10px;">
@@ -596,6 +642,64 @@
                 ],
             });
 
+            let bookingSidangJemaatTable = $('#bookingSidangJemaatTable').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "paging": true,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "responsive": true,
+                "pageLength": 10,
+                "scrollX": true,
+                "language": {
+                    "search": "Cari:",
+                    "lengthMenu": "Tampilkan _MENU_ entri",
+                    "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+                    "paginate": {
+                        "first": "Awal",
+                        "last": "Akhir",
+                        "next": "Berikutnya",
+                        "previous": "Sebelumnya"
+                    }
+                },
+                "order": [[0, "desc"]],
+                "ajax": {
+                    "url": "/admin/booking-sidang-jemaat-datatable",
+                    "type": "GET",
+                    "data": function (d) {
+                        d.distrik = $('#filterDistrikTabelSidang').val();
+                        d.sidang_jemaat = $('#filterJemaatTabelSidang').val();
+                        d.gedung = $('#filterGedungTabelSidang').val();
+                    }
+                },
+                "columns": [
+                    {
+                        "data": "id", 
+                        "visible": true 
+                    },
+                    {
+                        "data": "nama_sidang", 
+                        "visible": true 
+                    },
+                    {
+                        "data": "nama_distrik", 
+                        "visible": true 
+                    },
+                    {
+                        "data": "jumlah_kursi_hastinapura", 
+                        "visible": true 
+                    },
+                    {
+                        "data": "jumlah_kursi_yudistira", 
+                        "visible": true 
+                    },
+                ],
+            });
+            
+            /**
+             * Filter of bookingDetailTable
+             */
             $('#filterDistrikBooking').select2({
                 placeholder: "Pilih Distrik",
                 allowClear: true,
@@ -603,7 +707,7 @@
             });
 
             $('#filterJemaatBooking').select2({
-                placeholder: "Pilih Distrik",
+                placeholder: "Pilih Sidang Jemaat",
                 allowClear: true,
                 width: '100%'
             });
@@ -636,6 +740,9 @@
                 }
             });
 
+            /**
+             * Filter of bookingTable
+             */
             $('#filterDistrik').select2({
                 placeholder: "Pilih Distrik",
                 allowClear: true,
@@ -672,6 +779,43 @@
             $('#filterDistrik').on('change', function () {
                 let distrikId = $(this).val();
                 let jemaatSelect = $('#filterJemaat');
+
+                jemaatSelect.prop('disabled', true).html('<option value="">Semua</option>');
+
+                if (distrikId) {
+                    fetch(`/booking/asal-sidang/${distrikId}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            data.forEach(jemaat => {
+                                jemaatSelect.append(new Option(jemaat.nama_sidang, jemaat.id));
+                            });
+                            jemaatSelect.prop('disabled', false);
+                        });
+                }
+            });
+
+            /**
+             * Filter of bookingSidangJemaatTable
+             */
+            $('#filterDistrikTabelSidang').select2({
+                placeholder: "Pilih Distrik",
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#filterJemaatTabelSidang').select2({
+                placeholder: "Pilih Sidang Jemaat",
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#filterDistrikTabelSidang, #filterJemaatTabelSidang').on('change', function () {
+                bookingSidangJemaatTable.ajax.reload();
+            });
+
+            $('#filterDistrikTabelSidang').on('change', function () {
+                let distrikId = $(this).val();
+                let jemaatSelect = $('#filterJemaatTabelSidang');
 
                 jemaatSelect.prop('disabled', true).html('<option value="">Semua</option>');
 
