@@ -618,6 +618,24 @@
                 bookingDetailTable.ajax.reload();
             });
 
+            $('#filterDistrikBooking').on('change', function () {
+                let distrikId = $(this).val();
+                let jemaatSelect = $('#filterJemaatBooking');
+
+                jemaatSelect.prop('disabled', true).html('<option value="">Semua</option>');
+
+                if (distrikId) {
+                    fetch(`/booking/asal-sidang/${distrikId}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            data.forEach(jemaat => {
+                                jemaatSelect.append(new Option(jemaat.nama_sidang, jemaat.id));
+                            });
+                            jemaatSelect.prop('disabled', false);
+                        });
+                }
+            });
+
             $('#filterDistrik').select2({
                 placeholder: "Pilih Distrik",
                 allowClear: true,
