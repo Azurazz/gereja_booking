@@ -132,6 +132,15 @@
                             <% }) %>
                         </select>
                     </div>
+
+                    <div class="col">
+                        <label for="filterStatusBooking" class="form-label">Status Peserta:</label>
+                        <select id="filterStatusBooking" class="select2 form-control">
+                            <option value="active">Aktif</option>
+                            <option value="deleted">Terhapus</option>
+                            <option value="all">Semua</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -563,6 +572,7 @@
                         d.distrik = $('#filterDistrikBooking').val();
                         d.sidang_jemaat = $('#filterJemaatBooking').val();
                         d.block = $('#filterBlokBooking').val();
+                        d.status = $('#filterStatusBooking').val();
                     }
                 },
                 "columns": [
@@ -718,7 +728,12 @@
                 width: '100%'
             });
 
-            $('#filterDistrikBooking, #filterJemaatBooking, #filterBlokBooking').on('change', function () {
+            $('#filterStatusBooking').select2({
+                placeholder: "Pilih Status",
+                width: '100%'
+            });
+            
+            $('#filterDistrikBooking, #filterJemaatBooking, #filterBlokBooking, #filterStatusBooking').on('change', function () {
                 bookingDetailTable.ajax.reload();
             });
 

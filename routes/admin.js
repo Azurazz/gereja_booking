@@ -33,6 +33,10 @@ function isAuthenticated(req, res, next) {
 }
 
 /**
+ * VIEW ROUTES
+ */
+
+/**
  * Renders the admin dashboard page.
  * This route requires user authentication.
  * The page displays a pie chart showing the booking status for each block.
@@ -134,6 +138,10 @@ router.get('/logout', (req, res) => {
         res.redirect('/admin');
     });
 });
+
+/**
+ * AJAX ROUTES
+ */
 
 /**
  * Handles POST request to '/update-booking/:id' endpoint.
