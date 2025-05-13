@@ -2,6 +2,12 @@ const express = require('express');
 const util = require('util');
 const db = require('../models/db');
 const ExcelJS = require('exceljs');
+const constants = require("../helpers/constants");
+
+const pdf = require("html-pdf");
+const fs = require("fs-extra");
+const path = require("path");
+const ejs = require("ejs");
 
 const router = express.Router();
 const beginTransaction = util.promisify(db.beginTransaction).bind(db);
@@ -159,7 +165,7 @@ router.post('/update-booking/:id', isAuthenticated, async (req, res) => {
             return res.status(400).json({ success: false, message: 'ID tidak valid.' });
         }
 
-        const {
+        let {
             name,
             distrik_id,
             sidang_jemaat_id,
@@ -167,10 +173,36 @@ router.post('/update-booking/:id', isAuthenticated, async (req, res) => {
             category,
             class: kelas,
             age,
-            whatsapp
+            whatsapp,
+            is_padus,
+            booking_code
         } = req.body;
 
-        if (!name && !distrik_id && !sidang_jemaat_id && !block_id && !category && !kelas && !age && !whatsapp) {
+        if (is_padus == 1) {
+            block_id = constants.BLOCK_ID_PADUS;
+        } else {
+            const getBookingQueryText = `
+                SELECT
+                    bookings.*
+                FROM bookings
+                WHERE 
+                    bookings.booking_code = ?
+                    AND (
+                        bookings.is_padus = 0
+                        OR bookings.is_padus IS NULL
+                    )
+                LIMIT 1
+            `;
+            const bookingData = await query(getBookingQueryText, [booking_code]);
+
+            if (bookingData.length === 0) {
+                return res.status(404).json({ success: false, message: `Data dengan Booking Code ${booking_code} tidak ditemukan.` });
+            }
+
+            block_id = bookingData[0].block_id;
+        }
+
+        if (!name && !distrik_id && !sidang_jemaat_id && !block_id && !category && !kelas && !age && !whatsapp && !is_padus && !booking_code) {
             return res.status(400).json({ success: false, message: 'Tidak ada data yang diperbarui.' });
         }
 
@@ -209,19 +241,32 @@ router.post('/update-booking/:id', isAuthenticated, async (req, res) => {
             updateFields.push('whatsapp = ?');
             values.push(whatsapp);
         }
+        if (is_padus) {
+            updateFields.push('is_padus = ?');
+            values.push(is_padus);
+        }
 
         values.push(id);
+
+        await beginTransaction();
 
         const updateQuery = `UPDATE bookings SET ${updateFields.join(', ')} WHERE id = ?`;
 
         const result = await query(updateQuery, values);
 
+        const protocol = req.protocol;
+        const host = req.get("host");
+        const pdfPath = await regeneratePDF(protocol, host, booking_code);
+
         if (result.affectedRows > 0) {
+            await commit();
             return res.json({ success: true, message: 'Data berhasil diperbarui.' });
         } else {
+            await rollback();
             return res.status(404).json({ success: false, message: 'Data tidak ditemukan atau tidak ada perubahan.' });
         }
     } catch (error) {
+        await rollback();
         console.error('Error updating booking:', error);
         return res.status(500).json({ success: false, message: 'Gagal mengupdate data.', error: error.message });
     }
@@ -919,5 +964,151 @@ router.post('/restore-deleted-booking-detail/:booking_code', isAuthenticated, as
         return res.status(500).json({ success: false, message: 'Gagal mengaktifkan data.', error: error.message });
     }
 });
+
+const regeneratePDF = async (protocol, host, booking_code) => {
+    try {
+        const bookingDetailsQuery = `
+            SELECT
+                booking_details.distrik_id,
+                distrik.nama_distrik AS distrik_name,
+                booking_details.id AS sidang_jemaat_id,
+                sidang_jemaat.nama_sidang AS sidang_jemaat_name,
+                booking_details.block_id,
+                blocks.block_name,
+                blocks.gedung,
+                booking_details.num_seats,
+                booking_details.booking_code
+            FROM booking_details
+            JOIN distrik ON distrik.id = booking_details.distrik_id
+            JOIN sidang_jemaat ON sidang_jemaat.id = booking_details.sidang_jemaat_id
+            JOIN blocks ON blocks.id = booking_details.block_id
+            WHERE booking_details.booking_code = ?
+        `;
+        let bookingDetailData = await query(bookingDetailsQuery, [booking_code]);
+
+        if (bookingDetailData.length === 0) {
+            throw new Error("Data Booking Details tidak ditemukan.");
+        }
+
+        data = {
+            distrik_id: bookingDetailData[0].distrik_id,
+            distrik_name: bookingDetailData[0].distrik_name,
+            sidang_jemaat_id: bookingDetailData[0].sidang_jemaat_id,
+            sidang_jemaat_name: bookingDetailData[0].sidang_jemaat_name,
+            block_id: bookingDetailData[0].block_id,
+            block_name: bookingDetailData[0].block_name,
+            gedung: bookingDetailData[0].gedung,
+            num_seats: bookingDetailData[0].num_seats,
+            booking_code: bookingDetailData[0].booking_code,
+            bookings: []
+        };
+
+        const bookingsQuery = `
+            SELECT
+                bookings.id,
+                bookings.name,
+                bookings.class,
+                bookings.age,
+                bookings.whatsapp,
+                bookings.category,
+                bookings.num_seats,
+                bookings.distrik_id,
+                distrik.nama_distrik AS distrik_name,
+                bookings.sidang_jemaat_id,
+                sidang_jemaat.nama_sidang AS sidang_jemaat_name,
+                bookings.block_id,
+                blocks.block_name,
+                bookings.booking_code,
+                bookings.is_padus
+            FROM bookings
+            JOIN distrik ON distrik.id = bookings.distrik_id
+            JOIN sidang_jemaat ON sidang_jemaat.id = bookings.sidang_jemaat_id
+            JOIN blocks ON blocks.id = bookings.block_id
+            WHERE bookings.booking_code = ?
+        `;
+        let bookingData = await query(bookingsQuery, [booking_code]);
+
+        if (bookingData.length === 0) {
+            throw new Error("Data Booking tidak ditemukan.");
+        }
+
+        for (let i = 0; i < bookingData.length; i++) {
+            data.bookings.push({
+                id: bookingData[i].id,
+                name: bookingData[i].name,
+                class: bookingData[i].class,
+                age: bookingData[i].age,
+                whatsapp: bookingData[i].whatsapp,
+                category: bookingData[i].category,
+                num_seats: bookingData[i].num_seats,
+                distrik_id: bookingData[i].distrik_id,
+                distrik_name: bookingData[i].distrik_name,
+                sidang_jemaat_id: bookingData[i].sidang_jemaat_id,
+                sidang_jemaat_name: bookingData[i].sidang_jemaat_name,
+                block_id: bookingData[i].block_id,
+                block_name: bookingData[i].block_name,
+                booking_code: bookingData[i].booking_code,
+                is_padus: bookingData[i].is_padus
+            });
+        }
+
+        await generatePDF(protocol, host, data, booking_code);
+    } catch (error) {
+        console.error("❌ Error regenerating PDF:", error);
+        throw new Error("Gagal membuat bukti pemesanan.");
+    }
+}
+
+const generatePDF = async (protocol, host, bookingData, bookingCode) => {
+    try {
+        const templatePath = path.join(__dirname, "..", "views", "templates", "bukti-pemesanan-pdf.ejs");
+        const rootPath = path.resolve(__dirname, "..");
+        const storageDir = path.join(rootPath, "public", "storage", "pdf");
+        const relativePath = `storage/pdf/${bookingCode}.pdf`;
+        const outputPath = path.join(rootPath, "public", relativePath);
+
+        await fs.mkdir(storageDir, { recursive: true });
+
+        const template = await fs.readFile(templatePath, "utf-8");
+        const html = ejs.render(template, { protocol, host, booking: bookingData });
+
+        let timeStamp = new Date().toLocaleString("id-ID", {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+            hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+        let timeZone = () => {
+            const offset = new Date().getTimezoneOffset();
+            if (offset === -420) return "WIB (UTC+7)";
+            if (offset === -480) return "WITA (UTC+8)";
+            if (offset === -540) return "WIT (UTC+9)";
+            return "Zona Waktu Tidak Diketahui";
+        }
+
+        return new Promise((resolve, reject) => {
+            pdf.create(html, {
+                format: "A4",
+                border: "10mm",
+                footer: {
+                    height: "5mm",
+                    contents: `
+                        <div style="font-size:10px; text-align:center; width:100%; color: #555; line-height: 1.4;">
+                            <p style="margin: 1px 0; line-height: 1;">Dokumen ini dibuat secara otomatis oleh sistem.</p>
+                            <p style="margin: 1px 0; line-height: 1;">Dibuat pada: ${timeStamp} ${timeZone()}</p>
+                        </div>
+                    `
+                }
+            }).toFile(outputPath, (err, res) => {
+                if (err) {
+                    reject("Gagal membuat PDF");
+                } else {
+                    resolve(relativePath);
+                }
+            });
+        });
+    } catch (error) {
+        console.error("❌ Error generating PDF:", error);
+        throw new Error("Gagal membuat bukti pemesanan.");
+    }
+}
 
 module.exports = router;

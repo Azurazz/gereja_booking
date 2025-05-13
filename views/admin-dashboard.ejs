@@ -270,6 +270,7 @@
             <h2>Edit Booking Data</h2>
             <form id="editForm">
                 <input type="hidden" id="editId" name="id">
+                <input type="hidden" id="editBookingCode" name="booking_code">
 
                 <div class="form-group">
                     <label for="editNama">Nama Lengkap</label>
@@ -277,7 +278,7 @@
                 </div>
                 <div class="form-group">
                     <label for="editDistrik">Distrik</label>
-                    <select id="editDistrik" name="distrik_id">
+                    <select id="editDistrik" name="distrik_id" disabled>
                         <% distrikList.forEach(distrik => { %>
                             <option value="<%= distrik.id %>">
                                 <%= distrik.nama_distrik %>
@@ -287,12 +288,12 @@
                 </div>
                 <div class="form-group">
                     <label for="editAsalSidang">Sidang Jemaat</label>
-                    <select id="editAsalSidang" name="sidang_jemaat_id" required>
+                    <select id="editAsalSidang" name="sidang_jemaat_id" disabled>
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="editBlokBooking">Blok</label>
-                    <select id="editBlokBooking" name="block_id">
+                    <select id="editBlokBooking" name="block_id" disabled>
                         <% seatData.forEach(block => { %>
                             <option value="<%= block.id %>">
                                 <%= block.block_name %>
@@ -302,7 +303,7 @@
                 </div>
                 <div class="form-group">
                     <label for="editKategori">Kategori</label>
-                    <select id="editKategori" name="category">
+                    <select id="editKategori" name="category" disabled>
                         <option value="Anak">Anak</option>
                         <option value="Pendamping">Pendamping</option>
                         <option value="Orang Tua Peserta">Orang Tua Peserta</option>
@@ -320,6 +321,13 @@
                 <div class="form-group">
                     <label for="editNoWa">WhatsApp</label>
                     <input type="text" id="editNoWa" name="whatsapp">
+                </div>
+                <div class="form-group">
+                    <label for="editPadus">Tim Padus</label>
+                    <select id="editPadus" name="is_padus">
+                        <option value="0">Tidak</option>
+                        <option value="1">Ya</option>
+                    </select>
                 </div>
 
                 <button type="submit" class="btn">Simpan Perubahan</button>
@@ -866,7 +874,11 @@
                     url: `/booking/${bookingId}`,
                     type: 'GET',
                     success: function (data) {
+                        console.log(data);
+
                         $('#editId').val(data.id);
+                        $('#editBookingCode').val(data.booking_code);
+
                         $('#editNama').val(data.name);
                         $('#editDistrik').val(data.distrik_id);
                         $('#editBlokBooking').val(data.block_id);
@@ -874,6 +886,7 @@
                         $('#editKelas').val(data.class);
                         $('#editUmur').val(data.age);
                         $('#editNoWa').val(data.whatsapp);
+                        $('#editPadus').val(data.is_padus == 1 ? 1 : 0);
 
                         $('#editAsalSidang').empty().append('<option value="">Pilih Sidang</option>');
 
@@ -894,7 +907,7 @@
                         $('#editModal').css('display', 'block');
                     },
                     error: function (err) {
-                        console.error('Gagal mengambil data:', err);
+                        console.error('Gagal mengambil data booking:', err);
                     }
                 });
             });
@@ -914,6 +927,7 @@
 
                 let formData = {
                     id: $('#editId').val(),
+                    booking_code: $('#editBookingCode').val(),
                     name: $('#editNama').val(),
                     distrik_id: $('#editDistrik').val(),
                     sidang_jemaat_id: $('#editAsalSidang').val(),
@@ -922,6 +936,7 @@
                     class: $('#editKelas').val(),
                     age: $('#editUmur').val(),
                     whatsapp: $('#editNoWa').val(),
+                    is_padus: $('#editPadus').val()
                 };
 
                 $.ajax({
@@ -932,6 +947,8 @@
                         alert('Data berhasil diperbarui!');
                         $('#editModal').css('display', 'none');
                         bookingTable.ajax.reload(null, false);
+
+                        getUpdatedSeatData();
                     },
                     error: function (err) {
                         console.error('Gagal menyimpan perubahan:', err);
