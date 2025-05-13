@@ -85,11 +85,14 @@
 
         <% if (data) { %>
             <ul>
+                <% const children_with_padus = data.bookingList.filter(booking => booking.category === 'Anak'); %>
+                <% const hasPadus = children_with_padus.some(child => child.is_padus == 1); %>
+
                 <li><strong>Kode Pemesanan:</strong> <%= data.bookingDetail.booking_code %></li>
                 <li><strong>Distrik:</strong> <%= data.bookingDetail.nama_distrik %></li>
                 <li><strong>Sidang Jemaat:</strong> <%= data.bookingDetail.nama_sidang %></li>
                 <li><strong>Gedung:</strong> <%= data.bookingDetail.gedung %></li>
-                <li><strong>Blok:</strong> <%= data.bookingDetail.block_name %></li>
+                 <li><strong>Blok:</strong> <%= data.bookingDetail.block_name %><%= hasPadus ? ' dan Blok Padus' : '' %></li>
                 <li><strong>Jumlah Kursi:</strong> <%= data.bookingDetail.num_seats %></li>
             </ul>
             
@@ -106,6 +109,8 @@
                                 <th>Kategori</th>
                                 <th>Kelas</th>
                                 <th>Usia</th>
+                                <th>Tim Padus</th>
+                                <th>Blok</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -116,6 +121,8 @@
                                     <td><%= booking.category %></td>
                                     <td><%= booking.class ? booking.class : '-' %></td>
                                     <td><%= booking.age ? booking.age : '-' %></td>
+                                    <td><%= booking.is_padus == 1 ? 'Ya' : 'Tidak' %></td>
+                                    <td><%= booking.block_name %></td>
                                 </tr>
                             <% }); %>
                         </tbody>
@@ -135,6 +142,7 @@
                                 <th>Nama</th>
                                 <th>Kategori</th>
                                 <th>WhatsApp</th>
+                                <th>Blok</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -144,6 +152,7 @@
                                     <td><%= booking.name %></td>
                                     <td><%= booking.category %></td>
                                     <td><%= booking.whatsapp ? booking.whatsapp : '-' %></td>
+                                    <td><%= booking.block_name %></td>
                                 </tr>
                             <% }); %>
                         </tbody>

@@ -165,11 +165,14 @@
         <div class="registration-info">
             Berikut ini adalah daftar peserta yang telah terdaftar dalam Kebaktian Agung Anak 2025:
             <ul>
+                <% const children_with_padus = booking.bookings.filter(booking => booking.category === 'Anak'); %>
+                <% const hasPadus = children_with_padus.some(child => child.is_padus == 1); %>
+
                 <li><strong>Kode Pemesanan:</strong> <%= booking.booking_code %></li>
                 <li><strong>Distrik:</strong> <%= booking.distrik_name %></li>
                 <li><strong>Sidang Jemaat:</strong> <%= booking.sidang_jemaat_name %></li>
                 <li><strong>Gedung:</strong> <%= booking.gedung %></li>
-                <li><strong>Blok:</strong> <%= booking.block_name %></li>
+                 <li><strong>Blok:</strong> <%= booking.block_name %><%= hasPadus ? ' dan Blok Padus' : '' %></li>
                 <li><strong>Jumlah Kursi:</strong> <%= booking.num_seats %></li>
             </ul>
 
@@ -186,6 +189,8 @@
                                 <th>Kategori</th>
                                 <th>Kelas</th>
                                 <th>Usia</th>
+                                <th>Tim Padus</th>
+                                <th>Blok</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -196,6 +201,8 @@
                                     <td><%= booking.category %></td>
                                     <td><%= booking.class ? booking.class : '-' %></td>
                                     <td><%= booking.age ? booking.age : '-' %></td>
+                                    <td><%= booking.is_padus == 1 ? 'Ya' : 'Tidak' %></td>
+                                    <td><%= booking.block_name %></td>
                                 </tr>
                             <% }); %>
                         </tbody>
@@ -215,6 +222,7 @@
                                 <th>Nama</th>
                                 <th>Kategori</th>
                                 <th>WhatsApp</th>
+                                <th>Blok</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -224,6 +232,7 @@
                                     <td><%= booking.name %></td>
                                     <td><%= booking.category %></td>
                                     <td><%= booking.whatsapp ? booking.whatsapp : '-' %></td>
+                                    <td><%= booking.block_name %></td>
                                 </tr>
                             <% }); %>
                         </tbody>

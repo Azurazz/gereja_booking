@@ -345,6 +345,7 @@ router.get('/export-excel', isAuthenticated, (req, res) => {
             'Umur', 
             'WhatsApp', 
             'Kategori', 
+            'Tim Padus', 
             'Blok', 
             'Jumlah Kursi',
             'Booking Kode',
@@ -363,6 +364,7 @@ router.get('/export-excel', isAuthenticated, (req, res) => {
                 booking.age, 
                 booking.whatsapp, 
                 booking.category, 
+                booking.is_padus == 1 ? 'Ya' : 'Tidak', 
                 booking.block_name, 
                 booking.num_seats,
                 booking.booking_code,
@@ -395,6 +397,7 @@ router.get("/booking-datatable", isAuthenticated, async (req, res) => {
         let blockFilter = req.query.block || "";
         let categoryFilter = req.query.category || "";
         let statusFilter = req.query.status || "";
+        let padusFilter = req.query.padus || "";
 
         let whereClause = "WHERE 1=1";
         let params = [];
@@ -437,6 +440,11 @@ router.get("/booking-datatable", isAuthenticated, async (req, res) => {
         if (categoryFilter) {
             whereClause += " AND bookings.category = ?";
             params.push(categoryFilter);
+        }
+        
+        if (padusFilter) {
+            whereClause += " AND bookings.is_padus = ?";
+            params.push(padusFilter);
         }
 
         if (statusFilter) {
@@ -486,6 +494,7 @@ router.get("/booking-datatable", isAuthenticated, async (req, res) => {
                 bookings.age,
                 bookings.whatsapp,
                 bookings.category,
+                bookings.is_padus,
                 bookings.booking_code,
                 bookings.deleted_at
             FROM bookings

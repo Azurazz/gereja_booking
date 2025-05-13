@@ -221,6 +221,15 @@
                             <option value="all">Semua</option>
                         </select>
                     </div>
+                    
+                    <div class="col">
+                        <label for="filterTimPadus" class="form-label">Tim Padus:</label>
+                        <select id="filterTimPadus" class="select2 form-control">
+                            <option value="">Semua</option>
+                            <option value="1">Ya</option>
+                            <option value="0">Tidak</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -242,6 +251,7 @@
                         <th>Umur</th>
                         <th>No. WhatsApp</th>
                         <th>Kategori</th>
+                        <th>Tim Padus</th>
                         <th>Kode Pemesanan</th>
                         <th>Status</th>
                         <th>Aksi</th>
@@ -459,6 +469,7 @@
                         d.block = $('#filterBlok').val();
                         d.category = $('#filterKategori').val();
                         d.status = $('#filterStatus').val();
+                        d.padus = $('#filterTimPadus').val();
                     }
                 },
                 "columns": [
@@ -499,6 +510,13 @@
                         "visible": true 
                     },
                     {
+                        "data": "is_padus", 
+                        "visible": true,
+                        "render": function (data, type, row) {
+                            return data == 1 ? 'Ya' : 'Tidak';
+                        }
+                    },
+                    {
                         "data": "booking_code", 
                         "visible": true 
                     },
@@ -527,17 +545,6 @@
                             return `
                                 <button class="btn-edit" data-id="${data}">Edit</button>
                             `;
-                            // if (row.deleted_at === null) {
-                            //     return `
-                            //         <button class="btn-edit" data-id="${data}">Edit</button>
-                            //         <button class="btn-delete" data-id="${data}">Hapus</button>
-                            //     `;
-                            // } else {
-                            //     return `
-                            //         <button class="btn-edit" data-id="${data}">Edit</button>
-                            //         <button class="btn-restore" data-id="${data}">Restore</button>
-                            //     `;
-                            // }
                         }
                     }
                 ],
@@ -787,7 +794,13 @@
                 width: '100%'
             });
 
-            $('#filterDistrik, #filterJemaat, #filterBlok, #filterKategori, #filterStatus').on('change', function () {
+            $('#filterTimPadus').select2({
+                placeholder: "Pilih Status",
+                allowClear: true,
+                width: '100%'
+            });
+            
+            $('#filterDistrik, #filterJemaat, #filterBlok, #filterKategori, #filterStatus, #filterTimPadus').on('change', function () {
                 bookingTable.ajax.reload();
             });
 
