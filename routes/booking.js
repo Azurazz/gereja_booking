@@ -294,9 +294,13 @@ router.post('/book', normalizeArrayFields, async (req, res) => {
         if (reqBody.gedung === 'Hastinapura') {
             if (Array.isArray(reqBody.child_name)) {
                 for (let i = 0; i < reqBody.child_name.length; i++) {
+                    // const insertChild = `
+                    //     INSERT INTO bookings (name, class, age, category, num_seats, distrik_id, sidang_jemaat_id, block_id, booking_code, is_padus)
+                    //     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    // `;
                     const insertChild = `
-                        INSERT INTO bookings (name, class, age, category, num_seats, distrik_id, sidang_jemaat_id, block_id, booking_code, is_padus)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO bookings (name, class, age, category, num_seats, distrik_id, sidang_jemaat_id, block_id, booking_code)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     `;
 
                     // console.log(reqBody.child_name[i], reqBody.is_padus[i]);
@@ -314,10 +318,10 @@ router.post('/book', normalizeArrayFields, async (req, res) => {
                                 1,
                                 reqBody.distrik_id,
                                 reqBody.sidang_jemaat_id,
-                                // reqBody.block_id,
-                                reqBody.is_padus[i] == 'true' ? constants.BLOCK_ID_PADUS : reqBody.block_id,
+                                reqBody.block_id,
+                                // reqBody.is_padus[i] == 'true' ? constants.BLOCK_ID_PADUS : reqBody.block_id,
                                 booking_code,
-                                reqBody.is_padus[i] == 'true' ? 1 : 0,
+                                // reqBody.is_padus[i] == 'true' ? 1 : 0,
                             ],
                             (err, result) => {
                                 if (err) return reject(err);
@@ -338,12 +342,12 @@ router.post('/book', normalizeArrayFields, async (req, res) => {
                         distrik_name: distrikData[0].nama_distrik,
                         sidang_jemaat_id: reqBody.sidang_jemaat_id,
                         sidang_jemaat_name: sidangData[0].nama_sidang,
-                        // block_id: reqBody.block_id,
-                        block_id: reqBody.is_padus[i] == 'true' ? constants.BLOCK_ID_PADUS : reqBody.block_id,
-                        // block_name: seatData[0].block_name,
-                        block_name: reqBody.is_padus[i] == 'true' ? 'Blok Padus' : seatData[0].block_name,
+                        block_id: reqBody.block_id,
+                        // block_id: reqBody.is_padus[i] == 'true' ? constants.BLOCK_ID_PADUS : reqBody.block_id,
+                        block_name: seatData[0].block_name,
+                        // block_name: reqBody.is_padus[i] == 'true' ? 'Blok Padus' : seatData[0].block_name,
                         booking_code,
-                        is_padus: reqBody.is_padus[i] == 'true' ? 1 : 0,
+                        // is_padus: reqBody.is_padus[i] == 'true' ? 1 : 0,
                     });
                 }
             } else {

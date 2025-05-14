@@ -188,12 +188,35 @@
                     row.style.width = "100%";
                     row.style.alignItems = isMobile.matches ? "stretch" : "center";
     
+                    // row.innerHTML = `
+                    //     <div style="flex-basis: 3%; text-align: center;">
+                    //         <span style="font-size: 14px; color: gray;">${i}</span>
+                    //     </div>
+    
+                    //     <div style="flex-basis: ${isMobile.matches ? '100%' : '65%'};">
+                    //         <input type="text" name="child_name[${i - 1}]" placeholder="Nama Lengkap Anak" required>
+                    //     </div>
+    
+                    //     <div style="flex-basis: ${isMobile.matches ? '100%' : '15%'};">
+                    //         <input type="number" name="child_class[${i - 1}]" min="1" placeholder="Kelas" required>
+                    //     </div>
+    
+                    //     <div style="flex-basis: ${isMobile.matches ? '100%' : '15%'};">
+                    //         <input type="number" name="child_age[${i - 1}]" min="1" max="100" placeholder="Umur" required>
+                    //     </div>
+
+                    //     <div style="flex-basis: ${isMobile.matches ? '100%' : '10%'}; text-align: center;">
+                    //         <label style="display: block; margin-bottom: 2px; font-size: 90%;">Padus</label>
+                    //         <input type="hidden" name="is_padus[${i - 1}]" value="false">
+                    //         <input type="checkbox" name="is_padus[${i - 1}]" value="true" style="transform: scale(0.6); margin-top: -5px;">
+                    //     </div>
+                    // `;
                     row.innerHTML = `
                         <div style="flex-basis: 3%; text-align: center;">
                             <span style="font-size: 14px; color: gray;">${i}</span>
                         </div>
     
-                        <div style="flex-basis: ${isMobile.matches ? '100%' : '65%'};">
+                        <div style="flex-basis: ${isMobile.matches ? '100%' : '70%'};">
                             <input type="text" name="child_name[${i - 1}]" placeholder="Nama Lengkap Anak" required>
                         </div>
     
@@ -203,12 +226,6 @@
     
                         <div style="flex-basis: ${isMobile.matches ? '100%' : '15%'};">
                             <input type="number" name="child_age[${i - 1}]" min="1" max="100" placeholder="Umur" required>
-                        </div>
-
-                        <div style="flex-basis: ${isMobile.matches ? '100%' : '10%'}; text-align: center;">
-                            <label style="display: block; margin-bottom: 2px; font-size: 90%;">Padus</label>
-                            <input type="hidden" name="is_padus[${i - 1}]" value="false">
-                            <input type="checkbox" name="is_padus[${i - 1}]" value="true" style="transform: scale(0.6); margin-top: -5px;">
                         </div>
                     `;
     
@@ -256,7 +273,7 @@
                 document.getElementById("num_seats").value = totalKursi;
     
                 generateChildFields(jumlahAnak);
-                togglePadusCheckboxes();
+                // togglePadusCheckboxes();
                 generatePendampingFields(jumlahPendamping);
             }
     
@@ -265,23 +282,23 @@
             updateFields();
             jumlahAnakInput.addEventListener("input", updateFields);
 
-            function togglePadusCheckboxes() {
-                const selectedOption = distrikSelect.options[distrikSelect.selectedIndex];
-                const namaDistrik = selectedOption?.dataset?.nama || "";
+            // function togglePadusCheckboxes() {
+            //     const selectedOption = distrikSelect.options[distrikSelect.selectedIndex];
+            //     const namaDistrik = selectedOption?.dataset?.nama || "";
 
-                const isAllowed = namaDistrik === "purwokerto" || namaDistrik === "magelang";
-                const padusCheckboxes = document.querySelectorAll('input[type="checkbox"][name^="is_padus["]');
+            //     const isAllowed = namaDistrik === "purwokerto" || namaDistrik === "magelang";
+            //     const padusCheckboxes = document.querySelectorAll('input[type="checkbox"][name^="is_padus["]');
 
-                padusCheckboxes.forEach(checkbox => {
-                    checkbox.disabled = !isAllowed;
-                    if (!isAllowed) {
-                        checkbox.checked = false;
-                    }
-                });
-            }
+            //     padusCheckboxes.forEach(checkbox => {
+            //         checkbox.disabled = !isAllowed;
+            //         if (!isAllowed) {
+            //             checkbox.checked = false;
+            //         }
+            //     });
+            // }
 
             distrikSelect.addEventListener("change", () => {
-                togglePadusCheckboxes();
+                // togglePadusCheckboxes();
                 updateFields();
             });
         });

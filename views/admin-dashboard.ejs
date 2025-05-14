@@ -222,14 +222,14 @@
                         </select>
                     </div>
                     
-                    <div class="col">
+                    <!-- <div class="col">
                         <label for="filterTimPadus" class="form-label">Tim Padus:</label>
                         <select id="filterTimPadus" class="select2 form-control">
                             <option value="">Semua</option>
                             <option value="1">Ya</option>
                             <option value="0">Tidak</option>
                         </select>
-                    </div>
+                    </div> -->
                 </div>
             </div>
 
@@ -322,13 +322,13 @@
                     <label for="editNoWa">WhatsApp</label>
                     <input type="text" id="editNoWa" name="whatsapp">
                 </div>
-                <div class="form-group">
+                <!-- <div class="form-group">
                     <label for="editPadus">Tim Padus</label>
                     <select id="editPadus" name="is_padus">
                         <option value="0">Tidak</option>
                         <option value="1">Ya</option>
                     </select>
-                </div>
+                </div> -->
 
                 <button type="submit" class="btn">Simpan Perubahan</button>
             </form>
@@ -477,7 +477,7 @@
                         d.block = $('#filterBlok').val();
                         d.category = $('#filterKategori').val();
                         d.status = $('#filterStatus').val();
-                        d.padus = $('#filterTimPadus').val();
+                        // d.padus = $('#filterTimPadus').val();
                     }
                 },
                 "columns": [
@@ -519,7 +519,7 @@
                     },
                     {
                         "data": "is_padus", 
-                        "visible": true,
+                        "visible": false,
                         "render": function (data, type, row) {
                             return data == 1 ? 'Ya' : 'Tidak';
                         }
@@ -802,13 +802,14 @@
                 width: '100%'
             });
 
-            $('#filterTimPadus').select2({
-                placeholder: "Pilih Status",
-                allowClear: true,
-                width: '100%'
-            });
+            // $('#filterTimPadus').select2({
+            //     placeholder: "Pilih Status",
+            //     allowClear: true,
+            //     width: '100%'
+            // });
             
-            $('#filterDistrik, #filterJemaat, #filterBlok, #filterKategori, #filterStatus, #filterTimPadus').on('change', function () {
+            // $('#filterDistrik, #filterJemaat, #filterBlok, #filterKategori, #filterStatus, #filterTimPadus').on('change', function () {
+            $('#filterDistrik, #filterJemaat, #filterBlok, #filterKategori, #filterStatus').on('change', function () {
                 bookingTable.ajax.reload();
             });
 
@@ -886,7 +887,7 @@
                         $('#editKelas').val(data.class);
                         $('#editUmur').val(data.age);
                         $('#editNoWa').val(data.whatsapp);
-                        $('#editPadus').val(data.is_padus == 1 ? 1 : 0);
+                        // $('#editPadus').val(data.is_padus == 1 ? 1 : 0);
 
                         $('#editAsalSidang').empty().append('<option value="">Pilih Sidang</option>');
 
@@ -936,7 +937,7 @@
                     class: $('#editKelas').val(),
                     age: $('#editUmur').val(),
                     whatsapp: $('#editNoWa').val(),
-                    is_padus: $('#editPadus').val()
+                    // is_padus: $('#editPadus').val()
                 };
 
                 $.ajax({
